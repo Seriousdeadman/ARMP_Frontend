@@ -1,0 +1,57 @@
+<div class="shell-root">
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-mark">URS</div>
+      <div class="logo-name">University Portal</div>
+    </div>
+
+    <div class="sidebar-section-label">Modules</div>
+    <nav>
+      <ng-container *ngFor="let item of getVisibleNavItems()">
+        <a [routerLink]="item.route"
+           routerLinkActive="active"
+           class="nav-item">
+          {{ item.label }}
+        </a>
+      </ng-container>
+    </nav>
+
+    <div class="sidebar-section-label">Account</div>
+    <nav>
+      <ng-container *ngFor="let item of accountItems">
+        <a [routerLink]="item.route"
+           routerLinkActive="active"
+           class="nav-item">
+          {{ item.label }}
+        </a>
+      </ng-container>
+    </nav>
+
+    <div class="sidebar-bottom">
+      <div class="user-row" (click)="logout()">
+        <div class="user-avatar">{{ getUserInitials() }}</div>
+        <div>
+          <div class="user-info-name">
+            {{ currentUser?.firstName }} {{ currentUser?.lastName }}
+          </div>
+          <div class="user-info-role">{{ currentUser?.role }}</div>
+        </div>
+        <div class="user-chevron">↑</div>
+      </div>
+    </div>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <span class="topbar-title">University Portal</span>
+      <div class="topbar-actions">
+        <a routerLink="/app/profile" class="icon-btn">Profile</a>
+        <button class="icon-btn" (click)="logout()">Logout</button>
+      </div>
+    </header>
+
+    <main class="content">
+      <router-outlet></router-outlet>
+    </main>
+  </div>
+</div>

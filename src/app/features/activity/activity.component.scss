@@ -1,0 +1,101 @@
+.page { max-width: 800px; }
+
+.page-header { margin-bottom: 28px; }
+
+.page-title {
+  font-size: 22px;
+  font-weight: 500;
+  color: #1A1A18;
+  letter-spacing: -0.02em;
+  margin-bottom: 4px;
+}
+
+.page-sub { font-size: 13px; color: #888; }
+
+.session-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.session-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px;
+  background: #fff;
+  border: 1px solid #E6E4DE;
+  border-radius: 8px;
+}
+
+.session-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #E6E4DE;
+  flex-shrink: 0;
+  &.active { background: #97C459; }
+}
+
+.session-body { flex: 1; }
+
+.session-agent {
+  font-size: 13px;
+  color: #1A1A18;
+  margin-bottom: 4px;
+  font-weight: 500;
+}
+
+.session-meta {
+  font-size: 11px;
+  color: #aaa;
+  font-family: 'DM Mono', monospace;
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.sep { opacity: 0.4; }
+
+.session-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.badge {
+  font-size: 10px;
+  font-family: 'DM Mono', monospace;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: #F1EFE8;
+  color: #888;
+  &.active { background: #EAF3DE; color: #3B6D11; }
+}
+
+.revoke-btn {
+  font-size: 11px;
+  padding: 4px 10px;
+  border-radius: 4px;
+  border: 1px solid #E24B4A;
+  background: transparent;
+  color: #E24B4A;
+  cursor: pointer;
+  font-family: 'DM Mono', monospace;
+  transition: background 0.12s, color 0.12s;
+  &:hover {
+    background: #E24B4A;
+    color: #fff;
+  }
+}
+
+.loading { font-size: 13px; color: #aaa; }
+
+.error-msg { font-size: 13px; color: #E24B4A; }
+
+.empty {
+  font-size: 13px;
+  color: #aaa;
+  padding: 20px 0;
+  text-align: center;
+}

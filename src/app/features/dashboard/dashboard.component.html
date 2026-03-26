@@ -1,0 +1,62 @@
+<div class="dashboard">
+  <div class="page-header">
+    <h1 class="page-title">
+      Welcome back, {{ currentUser?.firstName }}
+    </h1>
+    <p class="page-sub">Here's what's happening with your account.</p>
+  </div>
+
+  <div class="stats-grid" *ngIf="stats">
+    <div class="stat-card">
+      <div class="stat-label">Total logins</div>
+      <div class="stat-value">{{ stats.totalLoginCount }}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Hours connected</div>
+      <div class="stat-value">{{ stats.totalHoursConnected | number:'1.1-1' }}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Avg session</div>
+      <div class="stat-value">{{ stats.averageSessionDuration | number:'1.0-0' }}m</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Devices used</div>
+      <div class="stat-value">{{ stats.totalDevicesUsed }}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Most used device</div>
+      <div class="stat-value small">{{ stats.mostUsedDevice || '—' }}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Peak hour</div>
+      <div class="stat-value">
+        {{ stats.peakUsageHour !== null ? stats.peakUsageHour + ':00' : '—' }}
+      </div>
+    </div>
+  </div>
+
+  <div class="section-title">Recent sessions</div>
+
+  <div class="loading" *ngIf="isLoading">Loading...</div>
+
+  <div class="activity-list" *ngIf="!isLoading">
+    <div class="activity-row" *ngFor="let session of recentSessions">
+      <div class="activity-dot" [class.green]="session.isActive"></div>
+      <div class="activity-info">
+        <div class="activity-main">
+          {{ session.userAgent || 'Unknown device' }}
+        </div>
+        <div class="activity-meta">
+          {{ formatDate(session.loginAt) }} · {{ session.ipAddress }}
+        </div>
+      </div>
+      <div class="activity-badge" [class.active]="session.isActive">
+        {{ session.isActive ? 'Active' : 'Ended' }}
+      </div>
+    </div>
+
+    <div class="empty" *ngIf="recentSessions.length === 0">
+      No sessions recorded yet.
+    </div>
+  </div>
+</div>

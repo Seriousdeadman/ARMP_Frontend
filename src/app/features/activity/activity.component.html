@@ -1,0 +1,47 @@
+<div class="page">
+  <div class="page-header">
+    <h1 class="page-title">Login activity</h1>
+    <p class="page-sub">Every session associated with your account.</p>
+  </div>
+
+  <div class="loading" *ngIf="isLoading">Loading...</div>
+  <div class="error-msg" *ngIf="errorMessage">{{ errorMessage }}</div>
+
+  <div class="session-list" *ngIf="!isLoading">
+
+    <div class="session-card" *ngFor="let session of sessions">
+      <div class="session-left">
+        <div class="session-dot" [class.active]="session.isActive"></div>
+      </div>
+
+      <div class="session-body">
+        <div class="session-agent">
+          {{ session.userAgent || 'Unknown device' }}
+        </div>
+        <div class="session-meta">
+          <span>{{ formatDate(session.loginAt) }}</span>
+          <span class="sep">·</span>
+          <span>{{ session.ipAddress || '—' }}</span>
+          <span class="sep">·</span>
+          <span>{{ getDuration(session) }}</span>
+        </div>
+      </div>
+
+      <div class="session-right">
+        <span class="badge" [class.active]="session.isActive">
+          {{ session.isActive ? 'Active' : 'Ended' }}
+        </span>
+        <button
+          class="revoke-btn"
+          *ngIf="session.isActive"
+          (click)="revokeSession(session.id)">
+          Revoke
+        </button>
+      </div>
+    </div>
+
+    <div class="empty" *ngIf="sessions.length === 0">
+      No sessions recorded yet.
+    </div>
+  </div>
+</div>
