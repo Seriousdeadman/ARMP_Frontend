@@ -1,0 +1,87 @@
+<div class="auth-root">
+  <div class="auth-left">
+    <div class="uni-wordmark">University Portal</div>
+    <div class="auth-left-body">
+      <p class="auth-tagline">Join the<br><strong>university portal.</strong></p>
+    </div>
+    <div class="auth-left-footer">© 2026 University Resource System</div>
+  </div>
+
+  <div class="auth-right">
+    <div class="auth-form-wrap">
+      <h1 class="auth-form-title">Create account</h1>
+      <p class="auth-form-sub">Register with your university credentials.</p>
+
+      <form [formGroup]="registerForm" (ngSubmit)="onSubmit()">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">First name</label>
+            <input class="form-input" type="text"
+                   formControlName="firstName" placeholder="Ali">
+            <span class="form-error"
+                  *ngIf="firstName?.invalid && firstName?.touched">
+              Required
+            </span>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Last name</label>
+            <input class="form-input" type="text"
+                   formControlName="lastName" placeholder="Mansour">
+            <span class="form-error"
+                  *ngIf="lastName?.invalid && lastName?.touched">
+              Required
+            </span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">University email</label>
+          <input class="form-input" type="email"
+                 formControlName="email" placeholder="student@university.edu">
+          <span class="form-error"
+                *ngIf="email?.invalid && email?.touched">
+            Valid email required
+          </span>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Password</label>
+          <input class="form-input" type="password"
+                 formControlName="password" placeholder="Min. 8 characters">
+          <span class="form-error"
+                *ngIf="password?.invalid && password?.touched">
+            Min. 8 characters
+          </span>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Phone</label>
+          <input class="form-input" type="text"
+                 formControlName="phone" placeholder="12345678">
+          <span class="form-error"
+                *ngIf="phone?.invalid && phone?.touched">
+            Required
+          </span>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Department</label>
+          <input class="form-input" type="text"
+                 formControlName="department" placeholder="Computer Science">
+        </div>
+
+        <div class="form-error server-error" *ngIf="errorMessage">
+          {{ errorMessage }}
+        </div>
+
+        <button class="btn-primary" type="submit" [disabled]="isLoading">
+          {{ isLoading ? 'Creating account...' : 'Create account' }}
+        </button>
+      </form>
+
+      <div class="auth-switch">
+        Already have an account? <a routerLink="/login">Sign in</a>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,44 @@
+<div class="page">
+  <div class="page-header">
+    <h1 class="page-title">Settings</h1>
+    <p class="page-sub">Manage your account security.</p>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Change password</div>
+
+    <form [formGroup]="passwordForm" (ngSubmit)="onSubmit()">
+
+      <div class="form-group">
+        <label class="form-label">Current password</label>
+        <input class="form-input" type="password"
+               formControlName="oldPassword" placeholder="••••••••">
+        <span class="form-error"
+              *ngIf="oldPassword?.invalid && oldPassword?.touched">
+          Required
+        </span>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">New password</label>
+        <input class="form-input" type="password"
+               formControlName="newPassword" placeholder="Min. 8 characters">
+        <span class="form-error"
+              *ngIf="newPassword?.invalid && newPassword?.touched">
+          Min. 8 characters required
+        </span>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Confirm new password</label>
+        <input class="form-input" type="password"
+               formControlName="confirmPassword" placeholder="••••••••">
+      </div>
+
+      <button class="btn-primary" type="submit" [disabled]="isLoading">
+        {{ isLoading ? 'Changing...' : 'Change password' }}
+      </button>
+
+    </form>
+  </div>
+</div>

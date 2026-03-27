@@ -1,0 +1,72 @@
+<div class="shell-root">
+  <div
+    class="sidebar-overlay"
+    *ngIf="sidebarOpen"
+    (click)="closeSidebar()">
+  </div>
+
+  <aside class="sidebar" [class.open]="sidebarOpen">
+    <div class="sidebar-logo">
+      <div class="logo-mark">URS</div>
+      <div class="logo-name">University Portal</div>
+    </div>
+
+    <div class="sidebar-section-label">Modules</div>
+    <nav>
+      <ng-container *ngFor="let item of getVisibleNavItems()">
+        <a [routerLink]="item.route"
+           routerLinkActive="active"
+           class="nav-item"
+           (click)="closeSidebar()">
+          {{ item.label }}
+        </a>
+      </ng-container>
+    </nav>
+
+    <div class="sidebar-section-label">Account</div>
+    <nav>
+      <ng-container *ngFor="let item of accountItems">
+        <a [routerLink]="item.route"
+           routerLinkActive="active"
+           class="nav-item"
+           (click)="closeSidebar()">
+          {{ item.label }}
+        </a>
+      </ng-container>
+    </nav>
+
+    <div class="sidebar-bottom">
+      <div class="user-row" (click)="logout()">
+        <div class="user-avatar">{{ getUserInitials() }}</div>
+        <div>
+          <div class="user-info-name">
+            {{ currentUser?.firstName }} {{ currentUser?.lastName }}
+          </div>
+          <div class="user-info-role">{{ currentUser?.role }}</div>
+        </div>
+        <div class="user-chevron">↑</div>
+      </div>
+    </div>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <button class="hamburger" (click)="toggleSidebar()">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+      <span class="topbar-title">University Portal</span>
+      <div class="topbar-actions">
+        <a routerLink="/app/profile" class="icon-btn">Profile</a>
+        <button class="icon-btn" (click)="logout()">Logout</button>
+      </div>
+    </header>
+
+    <main class="content">
+      <router-outlet></router-outlet>
+    </main>
+  </div>
+
+  <app-toast></app-toast>
+</div>
