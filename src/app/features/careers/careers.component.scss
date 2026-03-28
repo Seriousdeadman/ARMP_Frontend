@@ -1,0 +1,83 @@
+.careers-page {
+  max-width: 900px;
+  padding: 24px 28px 40px;
+}
+.careers-header {
+  margin-bottom: 20px;
+}
+.careers-header h1 {
+  margin: 0 0 4px;
+}
+.careers-header p,
+.sub {
+  color: #6b6b6b;
+}
+.panel {
+  background: #fff;
+  border-radius: 12px;
+  padding: 18px;
+  box-shadow: 0 1px 8px rgba(0, 0, 0, 0.08);
+  margin-bottom: 14px;
+}
+.status-card {
+  border-left: 4px solid #2a6f5f;
+  padding-left: 12px;
+}
+.badge {
+  display: inline-block;
+  margin-bottom: 8px;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.form-grid label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.form-grid .wide {
+  grid-column: 1 / -1;
+}
+input,
+select,
+textarea {
+  border: 1px solid #d9d9d9;
+  border-radius: 8px;
+  padding: 8px 10px;
+  font: inherit;
+}
+button {
+  width: fit-content;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 14px;
+  background: #2a6f5f;
+  color: #fff;
+  cursor: pointer;
+}
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.cv-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.file-picker input {
+  max-width: 280px;
+}
+.danger {
+  background: #8b2942;
+}
+.ok {
+  color: #2a6f5f;
+}
+.error {
+  color: #8b2942;
+}

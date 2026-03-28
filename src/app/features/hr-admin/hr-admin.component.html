@@ -1,0 +1,437 @@
+<div class="hr-admin">
+  <header class="page-header">
+    <h1 class="page-title">HR admin</h1>
+    <p class="page-sub">Recruitment, leave approvals, and staff directory</p>
+  </header>
+
+  <p class="error-banner" *ngIf="actionError">{{ actionError }}</p>
+  <p class="ok-banner" *ngIf="actionSuccess">{{ actionSuccess }}</p>
+
+  <section class="panel">
+    <h2 class="section-title">Recruitment</h2>
+    <p class="section-hint">Latest interview score per candidate (most recent dated interview with a score).</p>
+    <div class="loading" *ngIf="loadingCandidates">Loading candidates…</div>
+    <div class="table-wrap" *ngIf="!loadingCandidates">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Department</th>
+            <th>Status</th>
+            <th>Score</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let c of candidates">
+            <td>{{ c.name }}</td>
+            <td>{{ c.email }}</td>
+            <td>{{ c.departmentName ?? '—' }}</td>
+            <td>
+              <span [ngClass]="candidateStatusClass(c.status)">{{ c.status }}</span>
+            </td>
+            <td>{{ c.interviewScore ?? '—' }}</td>
+            <td class="cell-actions">
+              <button
+                type="button"
+                class="btn btn-primary"
+                *ngIf="c.status === 'ACCEPTED'"
+                [disabled]="processingCandidateId === c.id"
+                (click)="hire(c.id)">
+                Hire
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <p class="empty" *ngIf="candidates.length === 0">No candidates yet.</p>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2 class="section-title">Pending leave requests</h2>
+    <div class="loading" *ngIf="loadingLeaves">Loading…</div>
+    <div class="table-wrap" *ngIf="!loadingLeaves">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Employee</th>
+            <th>Dates</th>
+            <th>Days</th>
+            <th>Type</th>
+            <th>Status</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let lr of pendingLeaves">
+            <td>
+              <div class="cell-main">{{ lr.employeeName }}</div>
+              <div class="cell-sub">{{ lr.employeeEmail }}</div>
+            </td>
+            <td>{{ formatDate(lr.startDate) }} – {{ formatDate(lr.endDate) }}</td>
+            <td>{{ lr.requestedDayCount }}</td>
+            <td>{{ lr.type }}</td>
+            <td>
+              <span [ngClass]="leaveStatusClass(lr.status)">{{ lr.status }}</span>
+            </td>
+            <td class="cell-actions cell-actions--split">
+              <button
+                type="button"
+                class="btn btn-ok"
+                [disabled]="processingLeaveId === lr.id"
+                (click)="approveLeave(lr.id)">
+                Approve
+              </button>
+              <button
+                type="button"
+                class="btn btn-bad"
+                [disabled]="processingLeaveId === lr.id"
+                (click)="rejectLeave(lr.id)">
+                Reject
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <p class="empty" *ngIf="pendingLeaves.length === 0">No pending requests.</p>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2 class="section-title">Campus staff directory</h2>
+    <div class="search-row">
+      <input
+        type="search"
+        class="search-input"
+        placeholder="Search by name, email, or department…"
+        [(ngModel)]="employeeSearch"
+        autocomplete="off"
+      />
+    </div>
+    <div class="loading" *ngIf="loadingEmployees">Loading…</div>
+    <div class="table-wrap" *ngIf="!loadingEmployees">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Department</th>
+            <th>Grade</th>
+            <th>Leave left</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let e of filteredEmployees">
+            <td>{{ e.name }}</td>
+            <td>{{ e.email }}</td>
+            <td>{{ e.departmentName }}</td>
+            <td>{{ e.gradeName }}</td>
+            <td>
+              <span class="leave-balance">{{ e.leaveBalanceDays }}</span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <p class="empty" *ngIf="filteredEmployees.length === 0">No matches.</p>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2 class="section-title">Candidates CRUD</h2>
+    <div class="crud-grid">
+      <label>
+        Select candidate
+        <select [(ngModel)]="selectedCandidateId" (ngModelChange)="onCandidatePicked($event)">
+          <option value="">-- New / none --</option>
+          <option *ngFor="let c of candidateCrudRows" [value]="c.id">{{ c.name }} ({{ c.email }})</option>
+        </select>
+      </label>
+      <label>
+        Name
+        <input type="text" [(ngModel)]="candidateForm.name" />
+      </label>
+      <label>
+        Email
+        <input type="email" [(ngModel)]="candidateForm.email" />
+      </label>
+      <label>
+        Phone
+        <input type="text" [(ngModel)]="candidateForm.phone" />
+      </label>
+      <label>
+        Status
+        <select [(ngModel)]="candidateForm.status">
+          <option *ngFor="let s of candidateStatuses" [ngValue]="s">{{ s }}</option>
+        </select>
+      </label>
+      <label>
+        Department
+        <select [(ngModel)]="candidateForm.departmentId">
+          <option value="">-- Select department --</option>
+          <option *ngFor="let d of departmentRows" [value]="d.id">{{ d.name }}</option>
+        </select>
+      </label>
+      <label class="full">
+        Skills and experience (text CV shortcut)
+        <textarea rows="3" [(ngModel)]="candidateForm.skillsAndExperience"></textarea>
+      </label>
+    </div>
+    <div class="crud-actions">
+      <button class="btn btn-primary" (click)="createCandidate()">Create</button>
+      <button class="btn btn-ok" (click)="updateCandidate()">Update</button>
+      <button class="btn btn-bad" (click)="deleteCandidate()">Delete</button>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2 class="section-title">CV Management (text + file upload)</h2>
+    <div class="crud-grid">
+      <label>
+        Candidate
+        <select [(ngModel)]="selectedCvCandidateId" (ngModelChange)="loadCvData()">
+          <option value="">-- Select candidate --</option>
+          <option *ngFor="let c of candidateCrudRows" [value]="c.id">{{ c.name }} ({{ c.email }})</option>
+        </select>
+      </label>
+      <label class="full">
+        Text CV (skillsAndExperience)
+        <textarea rows="5" [(ngModel)]="cvText"></textarea>
+      </label>
+      <label class="full">
+        CV File (PDF/DOC/DOCX/PNG/JPG/WEBP)
+        <input type="file" (change)="onCvFileSelected($event)" />
+      </label>
+      <div class="full muted" *ngIf="cvFileMetadata">
+        File: {{ cvFileMetadata.fileName || 'None' }} ·
+        Type: {{ cvFileMetadata.contentType || '—' }} ·
+        Size: {{ cvFileMetadata.sizeBytes || 0 }} bytes
+      </div>
+    </div>
+    <div class="crud-actions">
+      <button class="btn btn-primary" (click)="saveCvText()">Save Text CV</button>
+      <button class="btn btn-ok" [disabled]="cvBusy" (click)="uploadCvFile()">Upload File</button>
+      <button class="btn btn-primary" (click)="downloadCvFile()">Download/Preview File</button>
+      <button class="btn btn-bad" (click)="deleteCvFile()">Delete File</button>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2 class="section-title">Interviews CRUD</h2>
+    <div class="crud-grid">
+      <label>
+        Select interview
+        <select [(ngModel)]="selectedInterviewId" (ngModelChange)="onInterviewPicked($event)">
+          <option value="">-- New / none --</option>
+          <option *ngFor="let i of interviewRows" [value]="i.id">
+            {{ i.candidate.name }} · {{ i.status }} · {{ i.interviewDate | date:'short' }}
+          </option>
+        </select>
+      </label>
+      <label>
+        Candidate
+        <select [(ngModel)]="interviewForm.candidateId">
+          <option value="">-- Select candidate --</option>
+          <option *ngFor="let c of candidateCrudRows" [value]="c.id">{{ c.name }}</option>
+        </select>
+      </label>
+      <label>
+        Date/Time
+        <input type="datetime-local" [(ngModel)]="interviewForm.interviewDate" />
+      </label>
+      <label>
+        Location
+        <input type="text" [(ngModel)]="interviewForm.location" />
+      </label>
+      <label>
+        Score (0-20)
+        <input type="number" min="0" max="20" [(ngModel)]="interviewForm.score" />
+      </label>
+      <label>
+        Status
+        <select [(ngModel)]="interviewForm.status">
+          <option *ngFor="let s of interviewStatuses" [ngValue]="s">{{ s }}</option>
+        </select>
+      </label>
+    </div>
+    <div class="crud-actions">
+      <button class="btn btn-primary" (click)="createInterview()">Create</button>
+      <button class="btn btn-ok" (click)="updateInterview()">Update</button>
+      <button class="btn btn-bad" (click)="deleteInterview()">Delete</button>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2 class="section-title">Employees CRUD + Promotion Flow</h2>
+    <p class="section-hint">Promotion path: select ACCEPTED candidate in Recruitment above and click Hire.</p>
+    <div class="crud-grid">
+      <label>
+        Select employee
+        <select [(ngModel)]="selectedEmployeeId" (ngModelChange)="onEmployeePicked($event)">
+          <option value="">-- New / none --</option>
+          <option *ngFor="let e of employeeCrudRows" [value]="e.id">{{ e.name }} ({{ e.email }})</option>
+        </select>
+      </label>
+      <label>
+        Name
+        <input type="text" [(ngModel)]="employeeForm.name" />
+      </label>
+      <label>
+        Email
+        <input type="email" [(ngModel)]="employeeForm.email" />
+      </label>
+      <label>
+        Hire date
+        <input type="date" [(ngModel)]="employeeForm.hireDate" />
+      </label>
+      <label>
+        Leave balance
+        <input type="number" min="0" [(ngModel)]="employeeForm.leaveBalance" />
+      </label>
+      <label>
+        Grade
+        <select [(ngModel)]="employeeForm.gradeId">
+          <option value="">-- Select grade --</option>
+          <option *ngFor="let g of gradeRows" [value]="g.id">{{ g.name }}</option>
+        </select>
+      </label>
+      <label>
+        Department
+        <select [(ngModel)]="employeeForm.departmentId">
+          <option value="">-- Select department --</option>
+          <option *ngFor="let d of departmentRows" [value]="d.id">{{ d.name }}</option>
+        </select>
+      </label>
+    </div>
+    <div class="crud-actions">
+      <button class="btn btn-primary" (click)="createEmployee()">Create</button>
+      <button class="btn btn-ok" (click)="updateEmployee()">Update</button>
+      <button class="btn btn-bad" (click)="deleteEmployee()">Delete</button>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2 class="section-title">Grades CRUD</h2>
+    <div class="crud-grid">
+      <label>
+        Select grade
+        <select [(ngModel)]="selectedGradeId" (ngModelChange)="onGradePicked($event)">
+          <option value="">-- New / none --</option>
+          <option *ngFor="let g of gradeRows" [value]="g.id">{{ g.name }}</option>
+        </select>
+      </label>
+      <label>
+        Name
+        <select [(ngModel)]="gradeForm.name">
+          <option *ngFor="let n of gradeNames" [ngValue]="n">{{ n }}</option>
+        </select>
+      </label>
+      <label>
+        Base salary
+        <input type="number" step="0.01" [(ngModel)]="gradeForm.baseSalary" />
+      </label>
+      <label>
+        Hourly bonus
+        <input type="number" step="0.01" [(ngModel)]="gradeForm.hourlyBonus" />
+      </label>
+    </div>
+    <div class="crud-actions">
+      <button class="btn btn-primary" (click)="createGrade()">Create</button>
+      <button class="btn btn-ok" (click)="updateGrade()">Update</button>
+      <button class="btn btn-bad" (click)="deleteGrade()">Delete</button>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2 class="section-title">Departments CRUD</h2>
+    <div class="crud-grid">
+      <label>
+        Select department
+        <select [(ngModel)]="selectedDepartmentId" (ngModelChange)="onDepartmentPicked($event)">
+          <option value="">-- New / none --</option>
+          <option *ngFor="let d of departmentRows" [value]="d.id">{{ d.name }}</option>
+        </select>
+      </label>
+      <label>
+        Name
+        <input type="text" [(ngModel)]="departmentForm.name" />
+      </label>
+    </div>
+    <div class="crud-actions">
+      <button class="btn btn-primary" (click)="createDepartment()">Create</button>
+      <button class="btn btn-ok" (click)="updateDepartment()">Update</button>
+      <button class="btn btn-bad" (click)="deleteDepartment()">Delete</button>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2 class="section-title">Leave Requests CRUD (Admin)</h2>
+    <div class="crud-grid">
+      <label>
+        Select leave request
+        <select [(ngModel)]="selectedLeaveRequestId" (ngModelChange)="onLeaveRequestPicked($event)">
+          <option value="">-- New / none --</option>
+          <option *ngFor="let l of leaveRequestRows" [value]="l.id">
+            {{ l.employee.name }} · {{ l.type }} · {{ l.status }}
+          </option>
+        </select>
+      </label>
+      <label>
+        Employee
+        <select [(ngModel)]="leaveRequestForm.employeeId">
+          <option value="">-- Select employee --</option>
+          <option *ngFor="let e of employeeCrudRows" [value]="e.id">{{ e.name }}</option>
+        </select>
+      </label>
+      <label>
+        Start date
+        <input type="date" [(ngModel)]="leaveRequestForm.startDate" />
+      </label>
+      <label>
+        End date
+        <input type="date" [(ngModel)]="leaveRequestForm.endDate" />
+      </label>
+      <label>
+        Type
+        <select [(ngModel)]="leaveRequestForm.type">
+          <option value="ANNUAL">ANNUAL</option>
+          <option value="SICK">SICK</option>
+          <option value="EXCEPTIONAL">EXCEPTIONAL</option>
+        </select>
+      </label>
+      <label>
+        Status
+        <select [(ngModel)]="leaveRequestForm.status">
+          <option value="PENDING">PENDING</option>
+          <option value="APPROVED">APPROVED</option>
+          <option value="REJECTED">REJECTED</option>
+        </select>
+      </label>
+    </div>
+    <div class="crud-actions">
+      <button class="btn btn-primary" (click)="createLeaveRequestCrud()">Create</button>
+      <button class="btn btn-ok" (click)="updateLeaveRequestCrud()">Update</button>
+      <button class="btn btn-bad" (click)="deleteLeaveRequestCrud()">Delete</button>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2 class="section-title">Salary Calculator</h2>
+    <div class="crud-grid">
+      <label>
+        Employee
+        <select [(ngModel)]="selectedSalaryEmployeeId" (ngModelChange)="onSalaryEmployeePicked($event)">
+          <option value="">-- Select employee --</option>
+          <option *ngFor="let e of employeeCrudRows" [value]="e.id">{{ e.name }}</option>
+        </select>
+      </label>
+    </div>
+    <div class="crud-actions">
+      <button class="btn btn-primary" (click)="calculateSalary()">Calculate monthly pay</button>
+    </div>
+    <p class="muted" *ngIf="salaryAmount !== null">
+      {{ selectedSalaryEmployeeName || 'Employee' }} monthly pay: <strong>{{ salaryAmount }}</strong>
+    </p>
+  </section>
+</div>

@@ -7,13 +7,34 @@
 
     <div class="sidebar-section-label">Modules</div>
     <nav>
-      <ng-container *ngFor="let item of getVisibleNavItems()">
+      <ng-container *ngFor="let item of getVisibleMainNavItems()">
         <a [routerLink]="item.route"
            routerLinkActive="active"
            class="nav-item">
           {{ item.label }}
         </a>
       </ng-container>
+      <div *ngIf="hasHrItems()"
+           class="nav-group"
+           [class.open]="isHrSectionExpanded()"
+           (mouseenter)="openHrMenu()"
+           (mouseleave)="closeHrMenu()">
+        <button type="button"
+                class="nav-item nav-group-trigger"
+                [class.active]="isHrSectionActive()"
+                (click)="toggleHrMenu()">
+          <span>HR</span>
+          <span class="nav-group-chevron">▾</span>
+        </button>
+        <div class="nav-submenu" *ngIf="isHrSectionExpanded()">
+          <a *ngFor="let item of getVisibleHrItems()"
+             [routerLink]="item.route"
+             routerLinkActive="active"
+             class="nav-item nav-subitem">
+            {{ item.label }}
+          </a>
+        </div>
+      </div>
     </nav>
 
     <div class="sidebar-section-label">Account</div>

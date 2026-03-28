@@ -51,6 +51,7 @@
 .nav-item {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   padding: 9px 20px;
   font-size: 13px;
   color: rgba(255,255,255,0.45);
@@ -68,6 +69,40 @@
     color: #fff;
     font-weight: 500;
   }
+}
+
+.nav-group {
+  margin: 0 8px;
+}
+
+.nav-group-trigger {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  font-family: inherit;
+}
+
+.nav-group-chevron {
+  font-size: 11px;
+  color: rgba(255,255,255,0.35);
+  transition: transform 0.12s ease, color 0.12s ease;
+}
+
+.nav-group.open .nav-group-chevron {
+  transform: rotate(180deg);
+  color: rgba(255,255,255,0.75);
+}
+
+.nav-submenu {
+  margin-top: 2px;
+}
+
+.nav-subitem {
+  margin: 0;
+  border-radius: 4px;
+  padding-left: 32px;
+  font-size: 12px;
+  color: rgba(255,255,255,0.5);
 }
 
 .sidebar-bottom {

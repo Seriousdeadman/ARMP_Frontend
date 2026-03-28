@@ -1,0 +1,19 @@
+<div class="hr-admin-layout">
+  <header class="header">
+    <h1>HR Admin</h1>
+    <p>Organized HR workspace with role-based pages.</p>
+  </header>
+
+  <nav class="tabs">
+    <a *ngFor="let link of links"
+       [routerLink]="link.route"
+       routerLinkActive="active"
+       class="tab">
+      {{ link.label }}
+    </a>
+  </nav>
+
+  <section class="content">
+    <router-outlet></router-outlet>
+  </section>
+</div>

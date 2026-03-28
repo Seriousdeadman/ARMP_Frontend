@@ -30,8 +30,18 @@ export class ShellComponent implements OnInit {
     { label: 'Classes', route: '/app/classes' },
     { label: 'Clubs & life', route: '/app/clubs' },
     {
-      label: 'HR & staff',
+      label: 'Careers',
+      route: '/app/careers',
+      roles: [UserRole.STUDENT]
+    },
+    {
+      label: 'HR portal',
       route: '/app/hr',
+      roles: [UserRole.LOGISTICS_STAFF, UserRole.SUPER_ADMIN]
+    },
+    {
+      label: 'HR admin',
+      route: '/app/hr/admin/overview',
       roles: [UserRole.LOGISTICS_STAFF, UserRole.SUPER_ADMIN]
     },
     {
@@ -46,6 +56,7 @@ export class ShellComponent implements OnInit {
     { label: 'Activity', route: '/app/activity' },
     { label: 'Settings', route: '/app/settings' }
   ];
+  isHrMenuOpen = false;
 
   constructor(
     private authService: AuthService,
@@ -66,6 +77,40 @@ export class ShellComponent implements OnInit {
     });
   }
 
+  getVisibleMainNavItems(): NavItem[] {
+    return this.getVisibleNavItems().filter(item => !this.isHrRoute(item.route));
+  }
+
+  getVisibleHrItems(): NavItem[] {
+    return this.getVisibleNavItems().filter(item => this.isHrRoute(item.route));
+  }
+
+  hasHrItems(): boolean {
+    return this.getVisibleHrItems().length > 0;
+  }
+
+  toggleHrMenu(): void {
+    this.isHrMenuOpen = !this.isHrMenuOpen;
+  }
+
+  openHrMenu(): void {
+    this.isHrMenuOpen = true;
+  }
+
+  closeHrMenu(): void {
+    if (!this.isHrSectionActive()) {
+      this.isHrMenuOpen = false;
+    }
+  }
+
+  isHrSectionExpanded(): boolean {
+    return this.isHrMenuOpen || this.isHrSectionActive();
+  }
+
+  isHrSectionActive(): boolean {
+    return this.router.url.startsWith('/app/hr');
+  }
+
   getUserInitials(): string {
     if (!this.currentUser) return '';
     return `${this.currentUser.firstName[0]}${this.currentUser.lastName[0]}`.toUpperCase();
@@ -74,5 +119,9 @@ export class ShellComponent implements OnInit {
   logout(): void {
     this.authService.logout();
     this.router.navigate(['/login']);
+  }
+
+  private isHrRoute(route: string): boolean {
+    return route.startsWith('/app/hr');
   }
 }

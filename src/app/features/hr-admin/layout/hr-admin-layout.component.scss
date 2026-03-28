@@ -1,0 +1,44 @@
+.hr-admin-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.header h1 {
+  margin: 0;
+  font-size: 22px;
+}
+
+.header p {
+  margin: 4px 0 0;
+  color: #8f8c83;
+  font-size: 13px;
+}
+
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  border-bottom: 1px solid #ece8df;
+  padding-bottom: 10px;
+}
+
+.tab {
+  text-decoration: none;
+  color: #45423a;
+  font-size: 12px;
+  padding: 8px 12px;
+  border: 1px solid #e6e4de;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.tab.active {
+  background: #1a1a18;
+  color: #fff;
+  border-color: #1a1a18;
+}
+
+.content {
+  margin-top: 2px;
+}

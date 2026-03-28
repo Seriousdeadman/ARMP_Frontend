@@ -1,0 +1,44 @@
+<p class="error" *ngIf="error">{{ error }}</p>
+
+<section class="panel">
+  <h2>Grade Management (Super Admin)</h2>
+  <div class="filters">
+    <label>
+      Search
+      <input [(ngModel)]="searchQuery" placeholder="Grade name, salary, bonus..." />
+    </label>
+  </div>
+  <table class="table" *ngIf="filteredGrades.length > 0">
+    <thead><tr><th>Name</th><th>Base Salary</th><th>Hourly Bonus</th><th></th></tr></thead>
+    <tbody>
+    <tr *ngFor="let g of filteredGrades">
+      <td>{{ g.name }}</td>
+      <td>{{ g.baseSalary }}</td>
+      <td>{{ g.hourlyBonus }}</td>
+      <td class="actions"><button type="button" (click)="pick(g.id)">Edit</button></td>
+    </tr>
+    </tbody>
+  </table>
+  <div class="form-grid">
+    <label>
+      Grade
+      <select [(ngModel)]="selectedId" (ngModelChange)="pick($event)">
+        <option value="">-- New --</option>
+        <option *ngFor="let g of grades" [value]="g.id">{{ g.name }}</option>
+      </select>
+    </label>
+    <label>
+      Name
+      <select [(ngModel)]="form.name">
+        <option *ngFor="let n of names" [ngValue]="n">{{ n }}</option>
+      </select>
+    </label>
+    <label><span>Base Salary</span><input type="number" step="0.01" [(ngModel)]="form.baseSalary" /></label>
+    <label><span>Hourly Bonus</span><input type="number" step="0.01" [(ngModel)]="form.hourlyBonus" /></label>
+  </div>
+  <div class="toolbar">
+    <button (click)="create()">Add Grade</button>
+    <button (click)="update()">Save Changes</button>
+    <button class="danger" (click)="remove()">Remove Grade</button>
+  </div>
+</section>

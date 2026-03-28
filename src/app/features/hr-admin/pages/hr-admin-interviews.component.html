@@ -1,0 +1,84 @@
+<p class="error" *ngIf="error">{{ error }}</p>
+
+<section class="panel">
+  <h2>Interview Management</h2>
+  <p>Use the list below to review interviews, then select one to edit.</p>
+  <div class="filters">
+    <label>
+      Search
+      <input [(ngModel)]="searchQuery" placeholder="Candidate, location, status..." />
+    </label>
+    <label>
+      Status
+      <select [(ngModel)]="statusFilter">
+        <option value="ALL">All</option>
+        <option *ngFor="let s of statuses" [ngValue]="s">{{ s }}</option>
+      </select>
+    </label>
+    <label>
+      Candidate
+      <select [(ngModel)]="candidateFilterId">
+        <option value="ALL">All</option>
+        <option *ngFor="let c of candidates" [value]="c.id">{{ c.name }}</option>
+      </select>
+    </label>
+  </div>
+  <table class="table" *ngIf="filteredInterviews.length > 0; else emptyState">
+    <thead>
+      <tr>
+        <th>Candidate</th>
+        <th>Date & time</th>
+        <th>Location</th>
+        <th>Status</th>
+        <th>Score</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let i of filteredInterviews">
+        <td>{{ i.candidate.name }}</td>
+        <td>{{ i.interviewDate | date:'medium' }}</td>
+        <td>{{ i.location }}</td>
+        <td>{{ i.status }}</td>
+        <td>{{ i.score ?? '-' }}</td>
+        <td class="actions">
+          <button type="button" (click)="pick(i.id)">Edit</button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+  <ng-template #emptyState>
+    <p *ngIf="!loading">No interviews yet. Schedule the first one below.</p>
+  </ng-template>
+  <div class="form-grid">
+    <label>
+      Interview
+      <select [(ngModel)]="selectedId" (ngModelChange)="pick($event)">
+        <option value="">-- New --</option>
+        <option *ngFor="let i of interviews" [value]="i.id">{{ i.candidate.name }} · {{ i.status }}</option>
+      </select>
+    </label>
+    <label>
+      Candidate
+      <select [(ngModel)]="form.candidateId">
+        <option value="">-- Select --</option>
+        <option *ngFor="let c of candidates" [value]="c.id">{{ c.name }}</option>
+      </select>
+    </label>
+    <label><span>Date time</span><input type="datetime-local" [(ngModel)]="form.interviewDate" /></label>
+    <label><span>Location</span><input [(ngModel)]="form.location" /></label>
+    <label><span>Score</span><input type="number" min="0" max="20" [(ngModel)]="form.score" /></label>
+    <label>
+      Status
+      <select [(ngModel)]="form.status">
+        <option *ngFor="let s of statuses" [ngValue]="s">{{ s }}</option>
+      </select>
+    </label>
+  </div>
+  <div class="toolbar">
+    <button type="button" (click)="startNew()">Reset Form</button>
+    <button (click)="create()">Schedule Interview</button>
+    <button (click)="update()">Save Changes</button>
+    <button class="danger" (click)="remove()">Remove Interview</button>
+  </div>
+</section>

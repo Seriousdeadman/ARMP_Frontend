@@ -1,0 +1,89 @@
+<p class="error" *ngIf="error">{{ error }}</p>
+<p class="error" *ngIf="info" style="color:#2d6a0a;">{{ info }}</p>
+
+<section class="panel">
+  <h2>Uploaded Candidates + CVs</h2>
+  <div class="filters">
+    <label>
+      Search
+      <input [(ngModel)]="searchQuery" placeholder="Name, email, phone, department..." />
+    </label>
+    <label>
+      Status
+      <select [(ngModel)]="selectedStatus">
+        <option *ngFor="let status of statuses" [ngValue]="status">{{ status }}</option>
+      </select>
+    </label>
+    <label>
+      Department
+      <select [(ngModel)]="selectedDepartmentId">
+        <option value="ALL">All</option>
+        <option *ngFor="let department of departments" [value]="department.id">{{ department.name }}</option>
+      </select>
+    </label>
+    <label>
+      Has CV
+      <select [(ngModel)]="hasCvFilter">
+        <option value="ALL">All</option>
+        <option value="YES">Yes</option>
+        <option value="NO">No</option>
+      </select>
+    </label>
+    <label class="toggle">
+      <input type="checkbox" [(ngModel)]="onlyUploadedCvs" />
+      <span>Show only uploaded CV files</span>
+    </label>
+  </div>
+  <div class="toolbar">
+    <button (click)="reload()">Refresh</button>
+  </div>
+  <table class="table" *ngIf="!isLoading && filteredCandidates.length > 0">
+    <thead>
+    <tr>
+      <th>Name</th>
+      <th>Email</th>
+      <th>Status</th>
+      <th>Department</th>
+      <th>CV Text</th>
+      <th>CV File</th>
+      <th></th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr *ngFor="let c of filteredCandidates">
+      <td>{{ c.name }}</td>
+      <td>{{ c.email }}</td>
+      <td>{{ c.status }}</td>
+      <td>{{ c.department.name || '—' }}</td>
+      <td>{{ c.cv?.skillsAndExperience ? 'Yes' : 'No' }}</td>
+      <td>{{ c.cv?.fileName || 'None' }}</td>
+      <td class="actions">
+        <button [disabled]="!c.cv?.fileName" (click)="openCvForCandidate(c.id)">Open CV</button>
+        <button (click)="selectCandidate(c.id)">Manage CV</button>
+      </td>
+    </tr>
+    </tbody>
+  </table>
+  <p *ngIf="isLoading">Loading candidates...</p>
+  <div *ngIf="!isLoading && filteredCandidates.length === 0">
+    No candidates match the current filters.
+  </div>
+</section>
+
+<section class="panel" *ngIf="selectedId">
+  <h2>CV File Actions</h2>
+  <div class="form-grid">
+    <label class="full">
+      File (pdf/doc/docx/png/jpg/jpeg/webp)
+      <input type="file" (change)="onFile($event)" />
+    </label>
+    <div class="full" *ngIf="cvMeta">
+      File: {{ cvMeta.fileName || 'None' }} | Type: {{ cvMeta.contentType || '—' }} | Size: {{ cvMeta.sizeBytes || 0 }} bytes
+    </div>
+  </div>
+  <div class="toolbar">
+    <button (click)="uploadCv()">Upload File</button>
+    <button (click)="downloadCv()">Open File</button>
+    <button class="danger" (click)="deleteCv()">Delete File</button>
+  </div>
+</section>

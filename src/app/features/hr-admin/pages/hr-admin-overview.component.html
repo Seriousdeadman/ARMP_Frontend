@@ -1,0 +1,71 @@
+<p class="error" *ngIf="error">{{ error }}</p>
+
+<section class="panel">
+  <h2>Recruitment</h2>
+  <div class="form-grid">
+    <label class="full">
+      Search
+      <input [(ngModel)]="candidateSearchQuery" placeholder="Candidate, email, status, department..." />
+    </label>
+  </div>
+  <table class="table">
+    <thead><tr><th>Name</th><th>Status</th><th>Score</th><th></th></tr></thead>
+    <tbody>
+      <tr *ngFor="let c of filteredCandidates">
+        <td>{{ c.name }}</td>
+        <td>{{ c.status }}</td>
+        <td>{{ c.interviewScore ?? '—' }}</td>
+        <td><button *ngIf="c.status === 'ACCEPTED'" (click)="hire(c.id)">Hire</button></td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<section class="panel">
+  <h2>Leave Approval Queue</h2>
+  <div class="form-grid">
+    <label class="full">
+      Search
+      <input [(ngModel)]="pendingLeaveSearchQuery" placeholder="Employee, email, type, status..." />
+    </label>
+    <label>
+      Confirm your password for approve/reject
+      <input type="password" [(ngModel)]="adminPassword" placeholder="Current admin password" />
+    </label>
+  </div>
+  <table class="table">
+    <thead><tr><th>Employee</th><th>Type</th><th>Days</th><th></th></tr></thead>
+    <tbody>
+      <tr *ngFor="let l of filteredPendingLeaves">
+        <td>{{ l.employeeName }}</td>
+        <td>{{ l.type }}</td>
+        <td>{{ l.requestedDayCount }}</td>
+        <td class="actions">
+          <button (click)="approve(l.id)">Approve</button>
+          <button class="danger" (click)="reject(l.id)">Reject</button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<section class="panel">
+  <h2>Staff Directory</h2>
+  <div class="form-grid">
+    <label class="full">
+      Search
+      <input [(ngModel)]="employeeSearchQuery" placeholder="Name, email, department, grade..." />
+    </label>
+  </div>
+  <table class="table">
+    <thead><tr><th>Name</th><th>Email</th><th>Department</th><th>Grade</th></tr></thead>
+    <tbody>
+      <tr *ngFor="let e of filteredEmployees">
+        <td>{{ e.name }}</td>
+        <td>{{ e.email }}</td>
+        <td>{{ e.departmentName }}</td>
+        <td>{{ e.gradeName }}</td>
+      </tr>
+    </tbody>
+  </table>
+</section>

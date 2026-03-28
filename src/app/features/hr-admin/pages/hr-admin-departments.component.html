@@ -1,0 +1,35 @@
+<p class="error" *ngIf="error">{{ error }}</p>
+
+<section class="panel">
+  <h2>Department Management (Super Admin)</h2>
+  <div class="filters">
+    <label>
+      Search
+      <input [(ngModel)]="searchQuery" placeholder="Department name..." />
+    </label>
+  </div>
+  <table class="table" *ngIf="filteredDepartments.length > 0">
+    <thead><tr><th>Name</th><th></th></tr></thead>
+    <tbody>
+    <tr *ngFor="let d of filteredDepartments">
+      <td>{{ d.name }}</td>
+      <td class="actions"><button type="button" (click)="pick(d.id)">Edit</button></td>
+    </tr>
+    </tbody>
+  </table>
+  <div class="form-grid">
+    <label>
+      Department
+      <select [(ngModel)]="selectedId" (ngModelChange)="pick($event)">
+        <option value="">-- New --</option>
+        <option *ngFor="let d of departments" [value]="d.id">{{ d.name }}</option>
+      </select>
+    </label>
+    <label><span>Name</span><input [(ngModel)]="name" /></label>
+  </div>
+  <div class="toolbar">
+    <button (click)="create()">Add Department</button>
+    <button (click)="update()">Save Changes</button>
+    <button class="danger" (click)="remove()">Remove Department</button>
+  </div>
+</section>

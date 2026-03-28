@@ -1,0 +1,75 @@
+<p class="error" *ngIf="error">{{ error }}</p>
+
+<section class="panel">
+  <h2>Leave Governance</h2>
+  <div class="form-grid">
+    <label class="full">
+      Search
+      <input [(ngModel)]="searchQuery" placeholder="Employee, email, type, status..." />
+    </label>
+    <label>
+      Status
+      <select [(ngModel)]="statusFilter">
+        <option value="ALL">All</option>
+        <option value="PENDING">PENDING</option>
+        <option value="APPROVED">APPROVED</option>
+        <option value="REJECTED">REJECTED</option>
+      </select>
+    </label>
+    <label>
+      Type
+      <select [(ngModel)]="typeFilter">
+        <option value="ALL">All</option>
+        <option value="ANNUAL">ANNUAL</option>
+        <option value="SICK">SICK</option>
+        <option value="EXCEPTIONAL">EXCEPTIONAL</option>
+      </select>
+    </label>
+    <label>
+      Confirm your password before approving/rejecting a leave request
+      <input type="password" [(ngModel)]="adminPassword" placeholder="Current admin password" />
+    </label>
+  </div>
+</section>
+
+<section class="panel">
+  <h2>Pending Requests</h2>
+  <p>Only pending requests from other users are shown here. Processed requests are hidden from this moderation queue.</p>
+  <table class="table" *ngIf="filteredPendingLeaves.length > 0; else noPending">
+    <thead><tr><th>Employee</th><th>Dates</th><th>Type</th><th>Status</th><th></th></tr></thead>
+    <tbody>
+      <tr *ngFor="let l of filteredPendingLeaves">
+        <td>{{ l.employee.name }}</td>
+        <td>{{ l.startDate }} - {{ l.endDate }}</td>
+        <td>{{ l.type }}</td>
+        <td>{{ l.status }}</td>
+        <td class="actions">
+          <button *ngIf="l.status === 'PENDING'" (click)="approve(l.id)">Approve</button>
+          <button *ngIf="l.status === 'PENDING'" class="danger" (click)="reject(l.id)">Reject</button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+  <ng-template #noPending>
+    <p>No pending leave requests to review.</p>
+  </ng-template>
+</section>
+
+<section class="panel">
+  <h2>Leave History</h2>
+  <p>Approved and rejected requests from other users.</p>
+  <table class="table" *ngIf="filteredHistoricalLeaves.length > 0; else noHistory">
+    <thead><tr><th>Employee</th><th>Dates</th><th>Type</th><th>Status</th></tr></thead>
+    <tbody>
+      <tr *ngFor="let l of filteredHistoricalLeaves">
+        <td>{{ l.employee.name }}</td>
+        <td>{{ l.startDate }} - {{ l.endDate }}</td>
+        <td>{{ l.type }}</td>
+        <td>{{ l.status }}</td>
+      </tr>
+    </tbody>
+  </table>
+  <ng-template #noHistory>
+    <p>No historical leave requests found.</p>
+  </ng-template>
+</section>

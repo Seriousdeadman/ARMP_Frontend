@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable, tap, map } from 'rxjs';
-import { environment } from '../../environments/environment.development';
+import { environment } from '../../environments/environment';
 import { AuthRequest, AuthResponse, RegisterRequest, RefreshTokenRequest } from '../models/auth.models';
 import { User } from '../models/user.models';
 import { isPlatformBrowser } from '@angular/common';

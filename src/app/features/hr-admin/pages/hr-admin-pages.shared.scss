@@ -1,0 +1,104 @@
+.panel {
+  margin-bottom: 20px;
+  border: 1px solid #ece8df;
+  border-radius: 10px;
+  padding: 14px;
+  background: #fff;
+}
+
+h2 {
+  margin: 0 0 10px;
+  font-size: 14px;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.table th,
+.table td {
+  text-align: left;
+  border-bottom: 1px solid #f0ede6;
+  padding: 8px;
+}
+
+button {
+  border: 1px solid #d8d4ca;
+  background: #fff;
+  padding: 6px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+button.danger {
+  color: #a32015;
+}
+
+.actions {
+  display: flex;
+  gap: 6px;
+}
+
+.error {
+  margin: 0 0 10px;
+  color: #a32015;
+  font-size: 13px;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(220px, 1fr));
+  gap: 10px;
+}
+
+.form-grid label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  color: #666;
+}
+
+.form-grid .full {
+  grid-column: 1 / -1;
+}
+
+input,
+select,
+textarea {
+  border: 1px solid #e6e4de;
+  border-radius: 6px;
+  padding: 7px 9px;
+  font-size: 13px;
+  font-family: inherit;
+}
+
+.toolbar {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.filters {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(180px, 1fr));
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.filters label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  color: #666;
+}
+
+.filters .toggle {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  align-self: end;
+}

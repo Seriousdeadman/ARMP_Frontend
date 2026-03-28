@@ -1,0 +1,89 @@
+<p class="error" *ngIf="error">{{ error }}</p>
+
+<section class="panel">
+  <h2>Employee Management</h2>
+  <div class="filters">
+    <label>
+      Search
+      <input [(ngModel)]="searchQuery" placeholder="Name, email, grade, department..." />
+    </label>
+    <label>
+      Grade
+      <select [(ngModel)]="selectedGradeFilter">
+        <option value="ALL">All</option>
+        <option *ngFor="let g of grades" [value]="g.id">{{ g.name }}</option>
+      </select>
+    </label>
+    <label>
+      Department
+      <select [(ngModel)]="selectedDepartmentFilter">
+        <option value="ALL">All</option>
+        <option *ngFor="let d of departments" [value]="d.id">{{ d.name }}</option>
+      </select>
+    </label>
+  </div>
+  <table class="table" *ngIf="filteredEmployees.length > 0">
+    <thead><tr><th>Name</th><th>Email</th><th>Grade</th><th>Department</th><th>Leave</th><th></th></tr></thead>
+    <tbody>
+    <tr *ngFor="let e of filteredEmployees">
+      <td>{{ e.name }}</td>
+      <td>{{ e.email }}</td>
+      <td>{{ e.grade.name }}</td>
+      <td>{{ e.department.name }}</td>
+      <td>{{ e.leaveBalance }}</td>
+      <td class="actions">
+        <button type="button" (click)="pick(e.id)">Edit</button>
+      </td>
+    </tr>
+    </tbody>
+  </table>
+  <div class="form-grid">
+    <label>
+      Employee
+      <select [(ngModel)]="selectedId" (ngModelChange)="pick($event)">
+        <option value="">-- New --</option>
+        <option *ngFor="let e of employees" [value]="e.id">{{ e.name }} ({{ e.email }})</option>
+      </select>
+    </label>
+    <label><span>Name</span><input [(ngModel)]="form.name" /></label>
+    <label><span>Email</span><input [(ngModel)]="form.email" /></label>
+    <label><span>Hire Date</span><input type="date" [(ngModel)]="form.hireDate" /></label>
+    <label><span>Leave Balance</span><input type="number" min="0" [(ngModel)]="form.leaveBalance" /></label>
+    <label>
+      Grade
+      <select [(ngModel)]="form.gradeId">
+        <option value="">-- Select --</option>
+        <option *ngFor="let g of grades" [value]="g.id">{{ g.name }}</option>
+      </select>
+    </label>
+    <label>
+      Department
+      <select [(ngModel)]="form.departmentId">
+        <option value="">-- Select --</option>
+        <option *ngFor="let d of departments" [value]="d.id">{{ d.name }}</option>
+      </select>
+    </label>
+  </div>
+  <div class="toolbar">
+    <button (click)="create()">Add Employee</button>
+    <button (click)="update()">Save Changes</button>
+    <button class="danger" (click)="remove()">Remove Employee</button>
+  </div>
+</section>
+
+<section class="panel">
+  <h2>Salary Calculator</h2>
+  <div class="form-grid">
+    <label>
+      Employee
+      <select [(ngModel)]="salaryEmployeeId">
+        <option value="">-- Select --</option>
+        <option *ngFor="let e of employees" [value]="e.id">{{ e.name }}</option>
+      </select>
+    </label>
+  </div>
+  <div class="toolbar">
+    <button (click)="calculateSalary()">Calculate Monthly Pay</button>
+  </div>
+  <p *ngIf="salaryValue !== null">Monthly pay: {{ salaryValue }}</p>
+</section>

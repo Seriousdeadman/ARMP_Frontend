@@ -7,7 +7,8 @@ export const roleGuard: CanActivateFn = (route: ActivatedRouteSnapshot) => {
   const authService = inject(AuthService);
   const router = inject(Router);
 
-  const requiredRole = route.data['role'] as UserRole;
+  const roles = route.data['roles'] as UserRole[] | undefined;
+  const requiredRole = route.data['role'] as UserRole | undefined;
   const currentUser = authService.getCurrentUser();
 
   if (!currentUser) {
@@ -15,10 +16,21 @@ export const roleGuard: CanActivateFn = (route: ActivatedRouteSnapshot) => {
     return false;
   }
 
-  if (currentUser.role === requiredRole || currentUser.role === UserRole.SUPER_ADMIN) {
-    return true;
+  if (roles?.length) {
+    if (currentUser.role === UserRole.SUPER_ADMIN || roles.includes(currentUser.role)) {
+      return true;
+    }
+    router.navigate(['/403']);
+    return false;
   }
 
-  router.navigate(['/403']);
-  return false;
+  if (requiredRole) {
+    if (currentUser.role === requiredRole || currentUser.role === UserRole.SUPER_ADMIN) {
+      return true;
+    }
+    router.navigate(['/403']);
+    return false;
+  }
+
+  return true;
 };

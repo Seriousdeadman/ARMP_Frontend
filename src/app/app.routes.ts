@@ -64,6 +64,85 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/admin/admin.component')
             .then(m => m.AdminComponent)
+      },
+      {
+        path: 'hr',
+        canActivate: [roleGuard],
+        data: { roles: [UserRole.LOGISTICS_STAFF, UserRole.SUPER_ADMIN] },
+        children: [
+          {
+            path: '',
+            pathMatch: 'full',
+            loadComponent: () =>
+              import('./features/hr-portal/hr-portal.component')
+                .then(m => m.HrPortalComponent)
+          },
+          {
+            path: 'admin',
+            canActivate: [roleGuard],
+            data: { roles: [UserRole.LOGISTICS_STAFF, UserRole.SUPER_ADMIN] },
+            loadComponent: () =>
+              import('./features/hr-admin/layout/hr-admin-layout.component')
+                .then(m => m.HrAdminLayoutComponent),
+            children: [
+              { path: '', pathMatch: 'full', redirectTo: 'overview' },
+              {
+                path: 'overview',
+                loadComponent: () =>
+                  import('./features/hr-admin/pages/hr-admin-overview.component')
+                    .then(m => m.HrAdminOverviewComponent)
+              },
+              {
+                path: 'candidates',
+                loadComponent: () =>
+                  import('./features/hr-admin/pages/hr-admin-candidates.component')
+                    .then(m => m.HrAdminCandidatesComponent)
+              },
+              {
+                path: 'interviews',
+                loadComponent: () =>
+                  import('./features/hr-admin/pages/hr-admin-interviews.component')
+                    .then(m => m.HrAdminInterviewsComponent)
+              },
+              {
+                path: 'employees',
+                loadComponent: () =>
+                  import('./features/hr-admin/pages/hr-admin-employees.component')
+                    .then(m => m.HrAdminEmployeesComponent)
+              },
+              {
+                path: 'leaves',
+                loadComponent: () =>
+                  import('./features/hr-admin/pages/hr-admin-leaves.component')
+                    .then(m => m.HrAdminLeavesComponent)
+              },
+              {
+                path: 'grades',
+                canActivate: [roleGuard],
+                data: { role: UserRole.SUPER_ADMIN },
+                loadComponent: () =>
+                  import('./features/hr-admin/pages/hr-admin-grades.component')
+                    .then(m => m.HrAdminGradesComponent)
+              },
+              {
+                path: 'departments',
+                canActivate: [roleGuard],
+                data: { role: UserRole.SUPER_ADMIN },
+                loadComponent: () =>
+                  import('./features/hr-admin/pages/hr-admin-departments.component')
+                    .then(m => m.HrAdminDepartmentsComponent)
+              }
+            ]
+          }
+        ]
+      },
+      {
+        path: 'careers',
+        canActivate: [roleGuard],
+        data: { roles: [UserRole.STUDENT] },
+        loadComponent: () =>
+          import('./features/careers/careers.component')
+            .then(m => m.CareersComponent)
       }
     ]
   },
