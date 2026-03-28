@@ -7,7 +7,6 @@ import { User } from '../models/user.models';
 import { isPlatformBrowser } from '@angular/common';
 import { PLATFORM_ID, inject } from '@angular/core';
 
-
 @Injectable({
   providedIn: 'root'
 })
@@ -22,8 +21,20 @@ export class AuthService {
   isLoggedIn$ = this.currentUser$.pipe(
     map(user => user !== null)
   );
+
   private platformId = inject(PLATFORM_ID);
-  constructor(private http: HttpClient, ) {}
+
+  constructor(private http: HttpClient) {
+    const storedToken = localStorage.getItem('accessToken');
+    if (storedToken) {
+      this.accessTokenSubject.next(storedToken);
+    }
+
+    const storedUser = localStorage.getItem('currentUser');
+    if (storedUser) {
+      this.currentUserSubject.next(JSON.parse(storedUser));
+    }
+  }
 
   register(request: RegisterRequest): Observable<AuthResponse> {
     return this.http.post<AuthResponse>(`${this.apiUrl}/register`, request).pipe(
@@ -41,6 +52,8 @@ export class AuthService {
     this.currentUserSubject.next(null);
     this.accessTokenSubject.next(null);
     if (isPlatformBrowser(this.platformId)) {
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('currentUser');
       localStorage.removeItem('refreshToken');
     }
   }
@@ -77,6 +90,9 @@ export class AuthService {
 
     this.currentUserSubject.next(user);
     this.accessTokenSubject.next(response.accessToken);
+
+    localStorage.setItem('accessToken', response.accessToken);
+    localStorage.setItem('currentUser', JSON.stringify(user));
     localStorage.setItem('refreshToken', response.refreshToken);
   }
 }

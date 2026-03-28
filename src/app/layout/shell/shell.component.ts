@@ -25,7 +25,11 @@ export class ShellComponent implements OnInit, OnDestroy {
 
   navItems: NavItem[] = [
     { label: 'Dashboard', route: '/app/dashboard' },
-    { label: 'Admin', route: '/app/admin', roles: [UserRole.SUPER_ADMIN] }
+    { label: 'Admin', route: '/app/admin', roles: [UserRole.SUPER_ADMIN] },
+    { label: 'Classrooms', route: '/app/classrooms' },
+    { label: 'Laboratories', route: '/app/laboratories' },
+    { label: 'Collaborative Spaces', route: '/app/collaborative-spaces' },
+    { label: 'Equipment', route: '/app/equipment' },
   ];
 
   accountItems: NavItem[] = [

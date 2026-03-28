@@ -1,0 +1,87 @@
+<div class="resource-page">
+  <div class="page-header">
+    <h1 class="page-title">Collaborative Spaces</h1>
+    <p class="page-sub">Manage all collaborative spaces and their availability.</p>
+    <button class="btn-primary" *ngIf="isStaff && !showForm" (click)="openCreate()">
+      + Add Space
+    </button>
+  </div>
+
+  <div class="form-card" *ngIf="showForm && isStaff">
+    <h2 class="form-title">{{ isEditing ? 'Edit Space' : 'New Space' }}</h2>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Name</label>
+        <input type="text" [(ngModel)]="form.name" placeholder="e.g. Innovation Hub" />
+      </div>
+      <div class="form-group">
+        <label>Capacity</label>
+        <input type="number" [(ngModel)]="form.capacity" placeholder="e.g. 15" />
+      </div>
+      <div class="form-group">
+        <label>Building</label>
+        <input type="text" [(ngModel)]="form.building" placeholder="e.g. Building C" />
+      </div>
+      <div class="form-group">
+        <label>Room Number</label>
+        <input type="text" [(ngModel)]="form.roomNumber" placeholder="e.g. C105" />
+      </div>
+      <div class="form-group">
+        <label>Type</label>
+        <select [(ngModel)]="form.spaceType">
+          <option *ngFor="let type of spaceTypes" [value]="type">{{ type }}</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Status</label>
+        <select [(ngModel)]="form.status">
+          <option *ngFor="let s of statusOptions" [value]="s">{{ s }}</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-actions">
+      <button class="btn-primary" (click)="submit()">{{ isEditing ? 'Update' : 'Create' }}</button>
+      <button class="btn-secondary" (click)="cancel()">Cancel</button>
+    </div>
+  </div>
+
+  <div class="loading" *ngIf="isLoading">Loading spaces...</div>
+
+  <div class="table-wrapper" *ngIf="!isLoading">
+    <table class="resource-table">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Building</th>
+          <th>Room</th>
+          <th>Capacity</th>
+          <th>Type</th>
+          <th>Status</th>
+          <th *ngIf="isStaff">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let space of spaces">
+          <td>{{ space.name }}</td>
+          <td>{{ space.building }}</td>
+          <td>{{ space.roomNumber }}</td>
+          <td>{{ space.capacity }}</td>
+          <td>{{ space.spaceType }}</td>
+          <td>
+            <span class="badge" [class.available]="space.status === 'AVAILABLE'"
+                                [class.unavailable]="space.status === 'UNAVAILABLE'">
+              {{ space.status }}
+            </span>
+          </td>
+          <td *ngIf="isStaff">
+            <button class="btn-edit" (click)="openEdit(space)">Edit</button>
+            <button class="btn-delete" (click)="delete(space.id)">Delete</button>
+          </td>
+        </tr>
+        <tr *ngIf="spaces.length === 0">
+          <td colspan="7" class="empty">No collaborative spaces found.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>

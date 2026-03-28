@@ -1,10 +1,15 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Routes } from '@angular/router';
+import { FormsModule } from '@angular/forms';
 import { ShellComponent } from './shell/shell.component';
 import { SharedModule } from '../shared/shared.module';
 import { roleGuard } from '../guards/role.guard';
 import { UserRole } from '../models/user.models';
+import { ClassroomComponent } from '../features/resource/classroom/classroom.component';
+import { LaboratoryComponent } from '../features/resource/laboratory/laboratory.component';
+import { CollaborativeSpaceComponent } from '../features/resource/collaborative-space/collaborative-space.component';
+import { EquipmentComponent } from '../features/resource/equipment/equipment.component';
 
 const routes: Routes = [
   {
@@ -43,15 +48,26 @@ const routes: Routes = [
         loadChildren: () =>
           import('../features/admin/admin.module')
             .then(m => m.AdminModule)
-      }
+      },
+      { path: 'classrooms', component: ClassroomComponent },
+      { path: 'laboratories', component: LaboratoryComponent },
+      { path: 'collaborative-spaces', component: CollaborativeSpaceComponent },
+      { path: 'equipment', component: EquipmentComponent }
     ]
   }
 ];
 
 @NgModule({
-  declarations: [ShellComponent],
+  declarations: [
+    ShellComponent,
+    ClassroomComponent,
+    LaboratoryComponent,
+    CollaborativeSpaceComponent,
+    EquipmentComponent
+  ],
   imports: [
     CommonModule,
+    FormsModule,
     RouterModule.forChild(routes),
     SharedModule
   ]

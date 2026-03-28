@@ -1,0 +1,90 @@
+<div class="resource-page">
+  <div class="page-header">
+    <h1 class="page-title">Classrooms</h1>
+    <p class="page-sub">Manage all classrooms and their availability.</p>
+    <button class="btn-primary" *ngIf="isStaff && !showForm" (click)="openCreate()">
+      + Add Classroom
+    </button>
+  </div>
+
+  <!-- Form -->
+  <div class="form-card" *ngIf="showForm && isStaff">
+    <h2 class="form-title">{{ isEditing ? 'Edit Classroom' : 'New Classroom' }}</h2>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Name</label>
+        <input type="text" [(ngModel)]="form.name" placeholder="e.g. Room A101" />
+      </div>
+      <div class="form-group">
+        <label>Capacity</label>
+        <input type="number" [(ngModel)]="form.capacity" placeholder="e.g. 30" />
+      </div>
+      <div class="form-group">
+        <label>Building</label>
+        <input type="text" [(ngModel)]="form.building" placeholder="e.g. Building A" />
+      </div>
+      <div class="form-group">
+        <label>Room Number</label>
+        <input type="text" [(ngModel)]="form.roomNumber" placeholder="e.g. A101" />
+      </div>
+      <div class="form-group">
+        <label>Type</label>
+        <select [(ngModel)]="form.classroomType">
+          <option *ngFor="let type of classroomTypes" [value]="type">{{ type }}</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Status</label>
+        <select [(ngModel)]="form.status">
+          <option *ngFor="let s of statusOptions" [value]="s">{{ s }}</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-actions">
+      <button class="btn-primary" (click)="submit()">{{ isEditing ? 'Update' : 'Create' }}</button>
+      <button class="btn-secondary" (click)="cancel()">Cancel</button>
+    </div>
+  </div>
+
+  <!-- Loading -->
+  <div class="loading" *ngIf="isLoading">Loading classrooms...</div>
+
+  <!-- Table -->
+  <div class="table-wrapper" *ngIf="!isLoading">
+    <table class="resource-table">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Building</th>
+          <th>Room</th>
+          <th>Capacity</th>
+          <th>Type</th>
+          <th>Status</th>
+          <th *ngIf="isStaff">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let classroom of classrooms">
+          <td>{{ classroom.name }}</td>
+          <td>{{ classroom.building }}</td>
+          <td>{{ classroom.roomNumber }}</td>
+          <td>{{ classroom.capacity }}</td>
+          <td>{{ classroom.classroomType }}</td>
+          <td>
+            <span class="badge" [class.available]="classroom.status === 'AVAILABLE'"
+                                [class.unavailable]="classroom.status === 'UNAVAILABLE'">
+              {{ classroom.status }}
+            </span>
+          </td>
+          <td *ngIf="isStaff">
+            <button class="btn-edit" (click)="openEdit(classroom)">Edit</button>
+            <button class="btn-delete" (click)="delete(classroom.id)">Delete</button>
+          </td>
+        </tr>
+        <tr *ngIf="classrooms.length === 0">
+          <td colspan="7" class="empty">No classrooms found.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
