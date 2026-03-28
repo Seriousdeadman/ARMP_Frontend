@@ -1,12 +1,56 @@
-<div class="hr-page">
+<div class="hr-page" [class.hr-page--dual]="portalView === 'dual'">
   <header class="hr-header">
-    <h1>HR portal</h1>
-    <p class="hr-sub">Application status for candidates and leave requests for staff linked to your account.</p>
+    <h1>{{ portalView === 'career' ? 'My career' : portalView === 'employee' ? 'My HR & leave' : 'HR workspace' }}</h1>
+    <p class="hr-sub" *ngIf="portalView === 'dual'">You have both an employee record and an application — manage leave below and review your application status.</p>
+    <p class="hr-sub" *ngIf="portalView === 'opsOnly' && !leaveSummary?.employeeFound">Use HR admin for recruitment and people operations. Personal leave appears here when your account is linked to an employee profile.</p>
+    <p class="hr-sub" *ngIf="portalView === 'career' || portalView === 'employee'">
+      {{ portalView === 'career' ? 'Track your application and CV — data is matched by your login email only.' : 'Leave balance and requests for your employee profile only.' }}
+    </p>
   </header>
 
-  <section class="panel" aria-labelledby="candidate-heading">
-    <h2 id="candidate-heading" class="panel-title">Your application</h2>
+  <div class="hr-grid" *ngIf="portalView === 'dual'">
+    <ng-container *ngTemplateOutlet="careerBlock"></ng-container>
+    <ng-container *ngTemplateOutlet="employeeBlock"></ng-container>
+  </div>
+
+  <ng-container *ngIf="portalView !== 'dual'">
+    <ng-container *ngIf="showCareer">
+      <ng-container *ngTemplateOutlet="careerBlock"></ng-container>
+    </ng-container>
+
+    <ng-container *ngIf="showEmployee(!!leaveSummary?.employeeFound)">
+      <ng-container *ngTemplateOutlet="employeeBlock"></ng-container>
+    </ng-container>
+  </ng-container>
+
+  <section class="panel" *ngIf="portalView === 'opsOnly' && !leaveSummary?.employeeFound">
+    <h2 class="panel-title">HR operations</h2>
+    <p class="panel-hint">Open the admin workspace for recruitment, interviews, directory, and leave approvals.</p>
+    <a routerLink="/app/hr/admin/talent-board" class="btn-primary inline-link">Go to HR admin</a>
+  </section>
+</div>
+
+<ng-template #careerBlock>
+  <section class="panel career-panel" *ngIf="showCareer" aria-labelledby="career-heading">
+    <h2 id="career-heading" class="panel-title">Application &amp; progress</h2>
     <p class="panel-hint">Matched by your login email to an HR candidate record.</p>
+
+    <div class="stepper" role="navigation" aria-label="Application progress">
+      <div class="step" [class.step--active]="careerStepIndex(applicationStatus) >= 0" [class.step--done]="careerStepIndex(applicationStatus) > 0">
+        <span class="step-dot">1</span>
+        <span class="step-label">Applied</span>
+      </div>
+      <div class="step-line" [class.step-line--done]="careerStepIndex(applicationStatus) > 0"></div>
+      <div class="step" [class.step--active]="careerStepIndex(applicationStatus) === 1" [class.step--done]="careerStepIndex(applicationStatus) > 1">
+        <span class="step-dot">2</span>
+        <span class="step-label">Interview</span>
+      </div>
+      <div class="step-line" [class.step-line--done]="careerStepIndex(applicationStatus) > 1"></div>
+      <div class="step" [class.step--active]="careerStepIndex(applicationStatus) === 2" [class.step--done]="careerStepIndex(applicationStatus) >= 2">
+        <span class="step-dot">3</span>
+        <span class="step-label">Decision</span>
+      </div>
+    </div>
 
     <div *ngIf="applicationLoading" class="state muted">Loading…</div>
     <div *ngIf="!applicationLoading && applicationError" class="state error">{{ applicationError }}</div>
@@ -14,7 +58,7 @@
     <ng-container *ngIf="!applicationLoading && !applicationError && applicationStatus">
       <div *ngIf="!applicationStatus.candidateFound" class="empty-card">
         <p>No job application is linked to your email yet.</p>
-        <p class="muted small">When HR creates a candidate with this address, your status will appear here.</p>
+        <p class="muted small">Submit your profile on <a routerLink="/app/careers">Careers</a>.</p>
       </div>
 
       <div *ngIf="applicationStatus.candidateFound" class="status-card">
@@ -34,10 +78,39 @@
         </dl>
       </div>
     </ng-container>
-  </section>
 
-  <section class="panel" aria-labelledby="leave-heading">
-    <h2 id="leave-heading" class="panel-title">Request leave</h2>
+    <div class="vault" *ngIf="!applicationLoading">
+      <h3 class="vault-title">CV vault</h3>
+      <p class="panel-hint">Drag &amp; drop a PDF or other accepted file, or browse.</p>
+      <div
+        class="drop-zone"
+        [class.drop-zone--active]="cvDragOver"
+        (dragover)="onCvDragOver($event)"
+        (dragleave)="onCvDragLeave()"
+        (drop)="onCvDrop($event)"
+      >
+        <input
+          type="file"
+          class="file-input"
+          [disabled]="cvUploading"
+          (change)="onCvInputChange($event)"
+          accept=".pdf,.doc,.docx,image/*"
+        />
+        <span class="drop-zone-text">{{ cvUploading ? 'Uploading…' : 'Drop your CV here or click to choose' }}</span>
+      </div>
+      <p class="muted small" *ngIf="cvMetadata?.filePresent">
+        Current file: <strong>{{ cvMetadata?.fileName }}</strong>
+      </p>
+      <p *ngIf="cvMessage" class="feedback ok">{{ cvMessage }}</p>
+      <p *ngIf="cvError" class="feedback err">{{ cvError }}</p>
+      <a routerLink="/app/careers" class="muted small link-more">Full application form on Careers →</a>
+    </div>
+  </section>
+</ng-template>
+
+<ng-template #employeeBlock>
+  <section class="panel employee-panel" *ngIf="showEmployee(!!leaveSummary?.employeeFound)" aria-labelledby="leave-heading">
+    <h2 id="leave-heading" class="panel-title">Leave &amp; absences</h2>
     <p class="panel-hint">For employees with an HR profile linked to your email.</p>
 
     <div *ngIf="leaveLoading" class="state muted">Loading…</div>
@@ -46,17 +119,18 @@
     <ng-container *ngIf="!leaveLoading && !leaveError && leaveSummary">
       <div *ngIf="!leaveSummary.employeeFound" class="empty-card">
         <p>No employee record is linked to your email.</p>
-        <p class="muted small">Leave requests are available once HR has an employee record for you.</p>
+        <p class="muted small" *ngIf="currentRole === UserRole.TEACHER">Contact HR to connect your staff profile for leave requests.</p>
       </div>
 
       <ng-container *ngIf="leaveSummary.employeeFound">
-        <div class="balance-banner" role="status">
-          <span class="balance-label">Remaining leave days</span>
-          <span class="balance-value">{{ leaveSummary.remainingLeaveDays }}</span>
+        <div class="pulse-card" role="status">
+          <div class="pulse-inner">
+            <span class="pulse-label">You have</span>
+            <span class="pulse-value">{{ leaveSummary.remainingLeaveDays }}</span>
+            <span class="pulse-unit">days of leave remaining</span>
+          </div>
+          <p class="pulse-name" *ngIf="leaveSummary.displayName">{{ leaveSummary.displayName }}</p>
         </div>
-        <p class="muted small balance-name" *ngIf="leaveSummary.displayName">
-          {{ leaveSummary.displayName }}
-        </p>
 
         <form [formGroup]="leaveForm" (ngSubmit)="submitLeave()" class="leave-form">
           <div class="field-row">
@@ -72,9 +146,19 @@
           <label class="field">
             <span>Leave type</span>
             <select formControlName="type">
-              <option *ngFor="let o of leaveTypes" [ngValue]="o.value">{{ o.label }}</option>
+              <option *ngFor="let opt of leaveTypeOptions" [ngValue]="opt.value">{{ opt.label }}</option>
             </select>
           </label>
+          <label class="field">
+            <span>Reason</span>
+            <textarea formControlName="reason" rows="3" placeholder="Brief reason for your request"></textarea>
+          </label>
+
+          <p *ngIf="leavePreview" class="preview-line">
+            If approved, you would have <strong>{{ leavePreview.remainingAfterApproval }}</strong> day(s) remaining
+            ({{ leavePreview.requestedDays }} calendar day(s) requested).
+          </p>
+          <p *ngIf="leavePreviewError" class="feedback err">{{ leavePreviewError }}</p>
 
           <button type="submit" class="btn-primary" [disabled]="leaveSubmitting || leaveForm.invalid">
             {{ leaveSubmitting ? 'Submitting…' : 'Submit request' }}
@@ -83,7 +167,30 @@
           <p *ngIf="leaveSubmitMessage" class="feedback ok">{{ leaveSubmitMessage }}</p>
           <p *ngIf="leaveSubmitError" class="feedback err">{{ leaveSubmitError }}</p>
         </form>
+
+        <div class="history-block">
+          <h3 class="history-title">Request history</h3>
+          <div *ngIf="historyLoading" class="muted small">Loading history…</div>
+          <p *ngIf="historyError" class="feedback err">{{ historyError }}</p>
+          <table class="history-table" *ngIf="!historyLoading && !historyError && leaveHistory.length">
+            <thead>
+              <tr>
+                <th>Dates</th>
+                <th>Status</th>
+                <th>Days</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let row of leaveHistory">
+                <td>{{ row.startDate }} → {{ row.endDate }}</td>
+                <td><span class="badge-status">{{ leaveStatusLabel(row.status) }}</span></td>
+                <td>{{ row.requestedDays ?? '—' }}</td>
+              </tr>
+            </tbody>
+          </table>
+          <p *ngIf="!historyLoading && !leaveHistory.length" class="muted small">No past requests yet.</p>
+        </div>
       </ng-container>
     </ng-container>
   </section>
-</div>
+</ng-template>

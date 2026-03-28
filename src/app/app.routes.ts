@@ -67,12 +67,19 @@ export const routes: Routes = [
       },
       {
         path: 'hr',
-        canActivate: [roleGuard],
-        data: { roles: [UserRole.LOGISTICS_STAFF, UserRole.SUPER_ADMIN] },
         children: [
           {
             path: '',
             pathMatch: 'full',
+            canActivate: [roleGuard],
+            data: {
+              roles: [
+                UserRole.STUDENT,
+                UserRole.TEACHER,
+                UserRole.LOGISTICS_STAFF,
+                UserRole.SUPER_ADMIN
+              ]
+            },
             loadComponent: () =>
               import('./features/hr-portal/hr-portal.component')
                 .then(m => m.HrPortalComponent)
@@ -85,18 +92,22 @@ export const routes: Routes = [
               import('./features/hr-admin/layout/hr-admin-layout.component')
                 .then(m => m.HrAdminLayoutComponent),
             children: [
-              { path: '', pathMatch: 'full', redirectTo: 'overview' },
+              { path: '', pathMatch: 'full', redirectTo: 'talent-board' },
               {
-                path: 'overview',
+                path: 'talent-board',
                 loadComponent: () =>
-                  import('./features/hr-admin/pages/hr-admin-overview.component')
-                    .then(m => m.HrAdminOverviewComponent)
+                  import('./features/hr-admin/pages/hr-admin-talent-board.component')
+                    .then(m => m.HrAdminTalentBoardComponent)
               },
               {
                 path: 'candidates',
-                loadComponent: () =>
-                  import('./features/hr-admin/pages/hr-admin-candidates.component')
-                    .then(m => m.HrAdminCandidatesComponent)
+                redirectTo: 'talent-board',
+                pathMatch: 'full'
+              },
+              {
+                path: 'overview',
+                redirectTo: 'talent-board',
+                pathMatch: 'full'
               },
               {
                 path: 'interviews',

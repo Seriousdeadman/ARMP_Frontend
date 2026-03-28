@@ -1,8 +1,8 @@
-import { Component, computed, inject } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { AuthService } from '../../../services/auth.service';
-import { UserRole } from '../../../models/user.models';
+import { filterHrMenu, HrMenuGroup } from '../../../hr/hr-menu.config';
 
 @Component({
   selector: 'app-hr-admin-layout',
@@ -14,28 +14,8 @@ import { UserRole } from '../../../models/user.models';
 export class HrAdminLayoutComponent {
   private readonly authService = inject(AuthService);
 
-  readonly currentUser = computed(() => this.authService.getCurrentUser());
-
-  readonly baseLinks = [
-    { label: 'Overview', route: '/app/hr/admin/overview' },
-    { label: 'Candidates + CV', route: '/app/hr/admin/candidates' },
-    { label: 'Interviews', route: '/app/hr/admin/interviews' },
-    { label: 'Employees + Salary', route: '/app/hr/admin/employees' },
-    { label: 'Leave Requests', route: '/app/hr/admin/leaves' }
-  ];
-
-  readonly superOnlyLinks = [
-    { label: 'Grades', route: '/app/hr/admin/grades' },
-    { label: 'Departments', route: '/app/hr/admin/departments' }
-  ];
-
-  get links() {
+  get menuGroups(): HrMenuGroup[] {
     const user = this.authService.getCurrentUser();
-    if (!user) {
-      return this.baseLinks;
-    }
-    return user.role === UserRole.SUPER_ADMIN
-      ? [...this.baseLinks, ...this.superOnlyLinks]
-      : this.baseLinks;
+    return filterHrMenu(user?.role);
   }
 }

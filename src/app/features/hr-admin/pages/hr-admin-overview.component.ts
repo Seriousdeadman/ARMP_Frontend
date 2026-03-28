@@ -89,11 +89,8 @@ export class HrAdminOverviewComponent implements OnInit {
   }
 
   private resolveAdminPassword(): string | null {
-    if (this.adminPassword.trim()) {
-      return this.adminPassword.trim();
-    }
-    const entered = window.prompt('Enter your current admin password to continue:');
-    return entered && entered.trim() ? entered.trim() : null;
+    const p = this.adminPassword.trim();
+    return p ? p : null;
   }
 
   get filteredCandidates(): CandidateRecruitmentRow[] {

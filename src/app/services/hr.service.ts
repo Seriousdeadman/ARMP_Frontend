@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 import {
   Candidate,
+  CandidateStatus,
   CandidateRequest,
   CandidateRecruitmentRow,
   CareersApplication,
@@ -44,6 +45,24 @@ export interface CreateLeaveRequest {
   startDate: string;
   endDate: string;
   type: LeaveTypeCode;
+  reason?: string | null;
+}
+
+export interface PortalLeaveRequestRow {
+  id: string;
+  startDate: string;
+  endDate: string;
+  type: string;
+  status: string;
+  requestedDays: number | null;
+  reason: string | null;
+  statusMessage: string | null;
+}
+
+export interface LeavePreviewResponse {
+  requestedDays: number;
+  currentRemainingDays: number;
+  remainingAfterApproval: number;
 }
 
 export interface SubmittedLeaveRequestResponse {
@@ -70,6 +89,16 @@ export class HrService {
 
   getLeaveSummary(): Observable<LeaveSummaryResponse> {
     return this.http.get<LeaveSummaryResponse>(`${this.portalBase}/leave-summary`);
+  }
+
+  getMyLeaveRequests(): Observable<PortalLeaveRequestRow[]> {
+    return this.http.get<PortalLeaveRequestRow[]>(`${this.portalBase}/my-leave-requests`);
+  }
+
+  getLeavePreview(startDate: string, endDate: string): Observable<LeavePreviewResponse> {
+    return this.http.get<LeavePreviewResponse>(`${this.portalBase}/leave-preview`, {
+      params: { startDate, endDate }
+    });
   }
 
   submitLeaveRequest(body: CreateLeaveRequest): Observable<SubmittedLeaveRequestResponse> {
@@ -114,8 +143,17 @@ export class HrService {
     return this.http.get<EmployeeDirectoryRow[]>(`${this.adminBase}/employees/directory`);
   }
 
-  promoteCandidate(candidateId: string): Observable<Employee> {
-    return this.http.post<Employee>(`${this.adminBase}/candidates/${candidateId}/promote`, {});
+  promoteCandidate(candidateId: string, gradeId?: string | null): Observable<Employee> {
+    const body = gradeId ? { gradeId } : {};
+    return this.http.post<Employee>(`${this.adminBase}/candidates/${candidateId}/promote`, body);
+  }
+
+  patchCandidateStatus(candidateId: string, status: CandidateStatus): Observable<Candidate> {
+    return this.http.patch<Candidate>(`${this.adminBase}/candidates/${candidateId}/status`, { status });
+  }
+
+  getEmployee(id: string): Observable<Employee> {
+    return this.http.get<Employee>(`${this.adminBase}/employees/${id}`);
   }
 
   approveLeave(id: string, adminPassword: string): Observable<LeaveRequest> {

@@ -1,0 +1,15 @@
+<div class="so-backdrop" *ngIf="open" (click)="onBackdropClick()" aria-hidden="true"></div>
+<aside
+  class="so-panel"
+  *ngIf="open"
+  role="dialog"
+  [attr.aria-label]="title"
+  [attr.aria-modal]="true">
+  <header class="so-head">
+    <h2 class="so-title">{{ title }}</h2>
+    <button type="button" class="so-close" (click)="onCloseClick()" aria-label="Close panel">×</button>
+  </header>
+  <div class="so-body">
+    <ng-content />
+  </div>
+</aside>

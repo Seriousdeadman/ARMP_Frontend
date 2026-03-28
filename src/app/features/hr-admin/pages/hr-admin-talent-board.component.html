@@ -1,0 +1,55 @@
+<div class="talent-board">
+  <header class="tb-head">
+    <h1>Talent Board</h1>
+    <p class="tb-sub">Drag candidates between columns. Status is saved immediately. Hiring from Accepted opens the panel.</p>
+    <button type="button" class="tb-refresh" (click)="reload()" [disabled]="isLoading">Refresh</button>
+  </header>
+
+  <p class="error" *ngIf="error">{{ error }}</p>
+  <div class="tb-loading" *ngIf="isLoading">Loading…</div>
+
+  <div cdkDropListGroup class="kanban" *ngIf="!isLoading">
+    <section *ngFor="let col of columns; trackBy: trackCol" class="kanban-col">
+      <h2 class="kanban-title">{{ col.label }}</h2>
+      <div
+        cdkDropList
+        [cdkDropListData]="col.cards"
+        [id]="'list-' + col.id"
+        class="kanban-list"
+        (cdkDropListDropped)="onDrop($event, col.id)">
+        <article
+          *ngFor="let c of col.cards; trackBy: trackCard"
+          cdkDrag
+          class="kanban-card">
+          <div class="card-title">{{ c.name }}</div>
+          <div class="card-meta">{{ c.email }}</div>
+          <div class="card-dept" *ngIf="c.departmentName">{{ c.departmentName }}</div>
+          <div class="score-badge" *ngIf="c.interviewScore != null">{{ c.interviewScore }}/20</div>
+        </article>
+        <div *ngIf="col.cards.length === 0" class="kanban-empty">Drop here</div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<app-slide-over-panel
+  [open]="hirePanelOpen"
+  title="Assign grade for new employee"
+  (closed)="skipHire()">
+  <ng-container *ngIf="hireCandidate">
+    <p class="muted">Promote <strong>{{ hireCandidate.name }}</strong> to an employee record.</p>
+    <label class="field">
+      <span>Grade</span>
+      <select [(ngModel)]="selectedGradeId">
+        <option *ngFor="let g of grades" [ngValue]="g.id">{{ g.name }} — base {{ g.baseSalary }}</option>
+      </select>
+    </label>
+    <p class="error" *ngIf="hireError">{{ hireError }}</p>
+    <div class="so-actions">
+      <button type="button" class="btn-secondary" (click)="skipHire()">Later</button>
+      <button type="button" class="btn-primary" (click)="confirmHire()" [disabled]="hireSubmitting || !selectedGradeId">
+        {{ hireSubmitting ? 'Hiring…' : 'Hire' }}
+      </button>
+    </div>
+  </ng-container>
+</app-slide-over-panel>

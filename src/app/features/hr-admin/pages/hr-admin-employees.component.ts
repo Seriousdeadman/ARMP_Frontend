@@ -1,15 +1,17 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { finalize } from 'rxjs/operators';
 import { Department, Employee, EmployeeRequest, Grade } from '../../../models/hr.models';
 import { HrService } from '../../../services/hr.service';
+import { SlideOverPanelComponent } from '../../../shared/slide-over-panel/slide-over-panel.component';
 
 @Component({
   selector: 'app-hr-admin-employees',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, SlideOverPanelComponent],
   templateUrl: './hr-admin-employees.component.html',
-  styleUrl: './hr-admin-pages.shared.scss'
+  styleUrls: ['./hr-admin-pages.shared.scss', './hr-admin-employees.component.scss']
 })
 export class HrAdminEmployeesComponent implements OnInit {
   private readonly hrService = inject(HrService);
@@ -25,6 +27,8 @@ export class HrAdminEmployeesComponent implements OnInit {
   salaryEmployeeId = '';
   salaryValue: number | null = null;
   error: string | null = null;
+  isLoading = false;
+  panelOpen = false;
 
   ngOnInit(): void {
     this.reload();
@@ -33,39 +37,106 @@ export class HrAdminEmployeesComponent implements OnInit {
   }
 
   reload(): void {
-    this.hrService.listEmployees().subscribe({ next: v => this.employees = v });
+    this.isLoading = true;
+    this.hrService.listEmployees()
+      .pipe(finalize(() => { this.isLoading = false; }))
+      .subscribe({ next: v => this.employees = v });
   }
 
-  pick(id: string): void {
-    this.selectedId = id;
-    const e = this.employees.find(x => x.id === id);
-    if (!e) return;
-    this.form = { name: e.name, email: e.email, hireDate: e.hireDate, leaveBalance: e.leaveBalance, gradeId: e.grade.id, departmentId: e.department.id };
+  initials(name: string): string {
+    const parts = name.trim().split(/\s+/);
+    if (parts.length === 0) {
+      return '?';
+    }
+    if (parts.length === 1) {
+      return parts[0].slice(0, 2).toUpperCase();
+    }
+    return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
+  }
+
+  openNew(): void {
+    this.selectedId = '';
+    this.form = { name: '', email: '', hireDate: '', leaveBalance: 21, gradeId: '', departmentId: '' };
+    this.error = null;
+    this.panelOpen = true;
+  }
+
+  openEdit(e: Employee): void {
+    this.selectedId = e.id;
+    this.form = {
+      name: e.name,
+      email: e.email,
+      hireDate: e.hireDate,
+      leaveBalance: e.leaveBalance,
+      gradeId: e.grade.id,
+      departmentId: e.department.id
+    };
+    this.error = null;
+    this.panelOpen = true;
+  }
+
+  closePanel(): void {
+    this.panelOpen = false;
   }
 
   create(): void {
-    if (!this.validateForm()) { return; }
+    if (!this.validateForm()) {
+      return;
+    }
     this.error = null;
-    this.hrService.createEmployee(this.form).subscribe({ next: () => this.reload(), error: e => this.error = e?.error?.message ?? 'Create failed' });
+    this.hrService.createEmployee(this.form).subscribe({
+      next: () => {
+        this.reload();
+        this.closePanel();
+      },
+      error: e => this.error = e?.error?.message ?? 'Create failed'
+    });
   }
 
   update(): void {
-    if (!this.selectedId) { this.error = 'Select employee first'; return; }
-    if (!this.validateForm()) { return; }
+    if (!this.selectedId) {
+      this.error = 'Select employee first';
+      return;
+    }
+    if (!this.validateForm()) {
+      return;
+    }
     this.error = null;
-    this.hrService.updateEmployee(this.selectedId, this.form).subscribe({ next: () => this.reload(), error: e => this.error = e?.error?.message ?? 'Update failed' });
+    this.hrService.updateEmployee(this.selectedId, this.form).subscribe({
+      next: () => {
+        this.reload();
+        this.closePanel();
+      },
+      error: e => this.error = e?.error?.message ?? 'Update failed'
+    });
   }
 
   remove(): void {
-    if (!this.selectedId) { this.error = 'Select employee first'; return; }
+    if (!this.selectedId) {
+      this.error = 'Select employee first';
+      return;
+    }
     this.error = null;
-    this.hrService.deleteEmployee(this.selectedId).subscribe({ next: () => { this.selectedId = ''; this.reload(); }, error: e => this.error = e?.error?.message ?? 'Delete failed' });
+    this.hrService.deleteEmployee(this.selectedId).subscribe({
+      next: () => {
+        this.selectedId = '';
+        this.reload();
+        this.closePanel();
+      },
+      error: e => this.error = e?.error?.message ?? 'Delete failed'
+    });
   }
 
   calculateSalary(): void {
-    if (!this.salaryEmployeeId) { this.error = 'Select employee for salary'; return; }
+    if (!this.salaryEmployeeId) {
+      this.error = 'Select employee for salary';
+      return;
+    }
     this.error = null;
-    this.hrService.getEmployeeMonthlyPay(this.salaryEmployeeId).subscribe({ next: v => this.salaryValue = v, error: e => this.error = e?.error?.message ?? 'Calculation failed' });
+    this.hrService.getEmployeeMonthlyPay(this.salaryEmployeeId).subscribe({
+      next: v => this.salaryValue = v,
+      error: e => this.error = e?.error?.message ?? 'Calculation failed'
+    });
   }
 
   get filteredEmployees(): Employee[] {

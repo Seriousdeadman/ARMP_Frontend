@@ -1,7 +1,10 @@
 <p class="error" *ngIf="error">{{ error }}</p>
 
-<section class="panel">
-  <h2>Leave Governance</h2>
+<header class="lv-head">
+  <h1>Leave inbox</h1>
+</header>
+
+<div class="lv-filters panel">
   <div class="form-grid">
     <label class="full">
       Search
@@ -25,51 +28,78 @@
         <option value="EXCEPTIONAL">EXCEPTIONAL</option>
       </select>
     </label>
-    <label>
-      Confirm your password before approving/rejecting a leave request
-      <input type="password" [(ngModel)]="adminPassword" placeholder="Current admin password" />
+    <label class="full">
+      Your password (required for approve / reject)
+      <input type="password" [(ngModel)]="adminPassword" placeholder="Current account password" autocomplete="current-password" />
     </label>
   </div>
-</section>
+</div>
 
-<section class="panel">
-  <h2>Pending Requests</h2>
-  <p>Only pending requests from other users are shown here. Processed requests are hidden from this moderation queue.</p>
-  <table class="table" *ngIf="filteredPendingLeaves.length > 0; else noPending">
-    <thead><tr><th>Employee</th><th>Dates</th><th>Type</th><th>Status</th><th></th></tr></thead>
-    <tbody>
-      <tr *ngFor="let l of filteredPendingLeaves">
-        <td>{{ l.employee.name }}</td>
-        <td>{{ l.startDate }} - {{ l.endDate }}</td>
-        <td>{{ l.type }}</td>
-        <td>{{ l.status }}</td>
-        <td class="actions">
-          <button *ngIf="l.status === 'PENDING'" (click)="approve(l.id)">Approve</button>
-          <button *ngIf="l.status === 'PENDING'" class="danger" (click)="reject(l.id)">Reject</button>
-        </td>
-      </tr>
-    </tbody>
-  </table>
-  <ng-template #noPending>
-    <p>No pending leave requests to review.</p>
-  </ng-template>
-</section>
+<div class="lv-split">
+  <div class="lv-list panel">
+    <h2>Pending</h2>
+    <ul class="lv-ul" *ngIf="filteredPendingLeaves.length > 0; else noPending">
+      <li *ngFor="let l of filteredPendingLeaves">
+        <button
+          type="button"
+          class="lv-row"
+          [class.active]="selectedLeave?.id === l.id"
+          (click)="selectLeave(l)">
+          <span class="lv-row-title">{{ l.employee.name }}</span>
+          <span class="lv-row-dates">{{ l.startDate }} – {{ l.endDate }}</span>
+          <span class="lv-row-type">{{ l.type }}</span>
+        </button>
+      </li>
+    </ul>
+    <ng-template #noPending>
+      <p class="muted">No pending requests.</p>
+    </ng-template>
 
-<section class="panel">
-  <h2>Leave History</h2>
-  <p>Approved and rejected requests from other users.</p>
-  <table class="table" *ngIf="filteredHistoricalLeaves.length > 0; else noHistory">
-    <thead><tr><th>Employee</th><th>Dates</th><th>Type</th><th>Status</th></tr></thead>
-    <tbody>
-      <tr *ngFor="let l of filteredHistoricalLeaves">
-        <td>{{ l.employee.name }}</td>
-        <td>{{ l.startDate }} - {{ l.endDate }}</td>
-        <td>{{ l.type }}</td>
-        <td>{{ l.status }}</td>
-      </tr>
-    </tbody>
-  </table>
-  <ng-template #noHistory>
-    <p>No historical leave requests found.</p>
-  </ng-template>
-</section>
+    <h2 class="lv-hist-title">History</h2>
+    <ul class="lv-ul" *ngIf="filteredHistoricalLeaves.length > 0; else noHist">
+      <li *ngFor="let l of filteredHistoricalLeaves">
+        <button
+          type="button"
+          class="lv-row lv-row-hist"
+          [class.active]="selectedLeave?.id === l.id"
+          (click)="selectLeave(l)">
+          <span class="lv-row-title">{{ l.employee.name }}</span>
+          <span class="lv-row-meta">{{ l.status }}</span>
+        </button>
+      </li>
+    </ul>
+    <ng-template #noHist>
+      <p class="muted">No history.</p>
+    </ng-template>
+  </div>
+
+  <aside class="lv-context panel" aria-live="polite">
+    <h2>Context</h2>
+    <div *ngIf="!selectedLeave" class="muted">Select a request to see leave balance and actions.</div>
+    <div *ngIf="selectedLeave && contextLoading">Loading employee…</div>
+    <ng-container *ngIf="selectedLeave && !contextLoading">
+      <dl class="ctx-dl">
+        <div>
+          <dt>Employee</dt>
+          <dd>{{ selectedLeave.employee.name }}</dd>
+        </div>
+        <div>
+          <dt>Dates</dt>
+          <dd>{{ selectedLeave.startDate }} – {{ selectedLeave.endDate }}</dd>
+        </div>
+        <div>
+          <dt>Type</dt>
+          <dd>{{ selectedLeave.type }}</dd>
+        </div>
+        <div *ngIf="contextEmployee">
+          <dt>Leave balance</dt>
+          <dd class="ctx-balance">{{ contextEmployee.leaveBalance }} days remaining</dd>
+        </div>
+      </dl>
+      <div class="ctx-actions" *ngIf="selectedLeave.status === 'PENDING'">
+        <button type="button" (click)="approve(selectedLeave.id)">Approve</button>
+        <button type="button" class="danger" (click)="reject(selectedLeave.id)">Reject</button>
+      </div>
+    </ng-container>
+  </aside>
+</div>

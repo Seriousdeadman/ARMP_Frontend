@@ -1,19 +1,23 @@
 <div class="hr-admin-layout">
-  <header class="header">
-    <h1>HR Admin</h1>
-    <p>Organized HR workspace with role-based pages.</p>
-  </header>
-
-  <nav class="tabs">
-    <a *ngFor="let link of links"
-       [routerLink]="link.route"
-       routerLinkActive="active"
-       class="tab">
-      {{ link.label }}
-    </a>
-  </nav>
-
-  <section class="content">
+  <aside class="sidebar" aria-label="HR workspace">
+    <div class="sidebar-brand">
+      <h1 class="sidebar-title">HR workspace</h1>
+      <p class="sidebar-sub">Recruitment, people, and governance.</p>
+    </div>
+    <nav class="sidebar-nav">
+      <ng-container *ngFor="let group of menuGroups">
+        <div class="nav-group-label">{{ group.label }}</div>
+        <a
+          *ngFor="let link of group.links"
+          [routerLink]="link.route"
+          routerLinkActive="active"
+          class="sidebar-link">
+          {{ link.label }}
+        </a>
+      </ng-container>
+    </nav>
+  </aside>
+  <section class="workspace">
     <router-outlet></router-outlet>
   </section>
 </div>

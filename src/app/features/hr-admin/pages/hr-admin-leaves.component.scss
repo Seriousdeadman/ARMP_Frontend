@@ -1,0 +1,106 @@
+.lv-head h1 {
+  margin: 0 0 16px;
+  font-size: 22px;
+}
+
+.lv-filters {
+  margin-bottom: 16px;
+}
+
+.lv-split {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  gap: 16px;
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .lv-split {
+    grid-template-columns: 1fr;
+  }
+}
+
+.lv-ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.lv-row {
+  width: 100%;
+  text-align: left;
+  border: 1px solid #ece8df;
+  background: #fff;
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.lv-row:hover {
+  border-color: #d4d0c6;
+}
+
+.lv-row.active {
+  border-color: #1a1a18;
+  box-shadow: 0 0 0 1px #1a1a18;
+}
+
+.lv-row-title {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.lv-row-dates,
+.lv-row-type {
+  font-size: 12px;
+  color: #6e6a62;
+}
+
+.lv-row-hist .lv-row-meta {
+  font-size: 12px;
+  color: #45423a;
+}
+
+.lv-hist-title {
+  margin: 20px 0 10px;
+  font-size: 14px;
+}
+
+.ctx-dl {
+  margin: 0;
+}
+
+.ctx-dl div {
+  margin-bottom: 12px;
+}
+
+.ctx-dl dt {
+  font-size: 11px;
+  text-transform: uppercase;
+  color: #8f8c83;
+  margin-bottom: 2px;
+}
+
+.ctx-dl dd {
+  margin: 0;
+  font-size: 14px;
+}
+
+.ctx-balance {
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.ctx-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.muted {
+  color: #6e6a62;
+}

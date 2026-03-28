@@ -1,4 +1,4 @@
-export type CandidateStatus = 'PENDING' | 'ACCEPTED' | 'REJECTED';
+export type CandidateStatus = 'NEW' | 'INTERVIEWING' | 'ACCEPTED' | 'REJECTED';
 
 export type LeaveRequestStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
 

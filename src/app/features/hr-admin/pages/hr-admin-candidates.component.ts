@@ -18,7 +18,13 @@ export class HrAdminCandidatesComponent implements OnInit {
   selectedId = '';
   cvMeta: CvFileMetadata | null = null;
   selectedFile: File | null = null;
-  readonly statuses: Array<CandidateStatus | 'ALL'> = ['ALL', 'PENDING', 'ACCEPTED', 'REJECTED'];
+  readonly statuses: Array<CandidateStatus | 'ALL'> = [
+    'ALL',
+    'NEW',
+    'INTERVIEWING',
+    'ACCEPTED',
+    'REJECTED'
+  ];
   selectedStatus: CandidateStatus | 'ALL' = 'ALL';
   selectedDepartmentId = 'ALL';
   hasCvFilter: 'ALL' | 'YES' | 'NO' = 'ALL';

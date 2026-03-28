@@ -1,54 +1,77 @@
 <p class="error" *ngIf="error">{{ error }}</p>
 
-<section class="panel">
-  <h2>Employee Management</h2>
-  <div class="filters">
-    <label>
-      Search
-      <input [(ngModel)]="searchQuery" placeholder="Name, email, grade, department..." />
-    </label>
-    <label>
-      Grade
-      <select [(ngModel)]="selectedGradeFilter">
-        <option value="ALL">All</option>
-        <option *ngFor="let g of grades" [value]="g.id">{{ g.name }}</option>
-      </select>
-    </label>
-    <label>
-      Department
-      <select [(ngModel)]="selectedDepartmentFilter">
-        <option value="ALL">All</option>
-        <option *ngFor="let d of departments" [value]="d.id">{{ d.name }}</option>
-      </select>
-    </label>
-  </div>
-  <table class="table" *ngIf="filteredEmployees.length > 0">
-    <thead><tr><th>Name</th><th>Email</th><th>Grade</th><th>Department</th><th>Leave</th><th></th></tr></thead>
-    <tbody>
-    <tr *ngFor="let e of filteredEmployees">
-      <td>{{ e.name }}</td>
-      <td>{{ e.email }}</td>
-      <td>{{ e.grade.name }}</td>
-      <td>{{ e.department.name }}</td>
-      <td>{{ e.leaveBalance }}</td>
-      <td class="actions">
-        <button type="button" (click)="pick(e.id)">Edit</button>
-      </td>
-    </tr>
-    </tbody>
-  </table>
+<header class="emp-head">
+  <h1>Employee directory</h1>
+  <button type="button" class="btn-add" (click)="openNew()">Add employee</button>
+</header>
+
+<div class="filters emp-filters">
+  <label>
+    Search
+    <input [(ngModel)]="searchQuery" placeholder="Name, email, grade, department..." />
+  </label>
+  <label>
+    Grade
+    <select [(ngModel)]="selectedGradeFilter">
+      <option value="ALL">All</option>
+      <option *ngFor="let g of grades" [value]="g.id">{{ g.name }}</option>
+    </select>
+  </label>
+  <label>
+    Department
+    <select [(ngModel)]="selectedDepartmentFilter">
+      <option value="ALL">All</option>
+      <option *ngFor="let d of departments" [value]="d.id">{{ d.name }}</option>
+    </select>
+  </label>
+</div>
+
+<div class="emp-grid" *ngIf="!isLoading">
+  <button
+    type="button"
+    *ngFor="let e of filteredEmployees"
+    class="emp-card"
+    (click)="openEdit(e)">
+    <div class="emp-avatar" [attr.aria-hidden]="true">{{ initials(e.name) }}</div>
+    <span class="status-dot" aria-label="Active"></span>
+    <div class="emp-card-name">{{ e.name }}</div>
+    <div class="emp-card-meta">{{ e.department.name }}</div>
+    <div class="emp-card-leave">{{ e.leaveBalance }} days leave</div>
+  </button>
+</div>
+
+<div class="emp-skeleton-grid" *ngIf="isLoading">
+  <div class="emp-skel" *ngFor="let _ of [1,2,3,4,5,6,7,8]"></div>
+</div>
+
+<p *ngIf="!isLoading && filteredEmployees.length === 0" class="muted">No employees match your filters.</p>
+
+<section class="panel emp-salary">
+  <h2>Salary calculator</h2>
   <div class="form-grid">
     <label>
       Employee
-      <select [(ngModel)]="selectedId" (ngModelChange)="pick($event)">
-        <option value="">-- New --</option>
-        <option *ngFor="let e of employees" [value]="e.id">{{ e.name }} ({{ e.email }})</option>
+      <select [(ngModel)]="salaryEmployeeId">
+        <option value="">-- Select --</option>
+        <option *ngFor="let e of employees" [value]="e.id">{{ e.name }}</option>
       </select>
     </label>
+  </div>
+  <div class="toolbar">
+    <button type="button" (click)="calculateSalary()">Calculate monthly pay</button>
+  </div>
+  <p *ngIf="salaryValue !== null">Monthly pay: {{ salaryValue }}</p>
+</section>
+
+<app-slide-over-panel
+  [open]="panelOpen"
+  [title]="selectedId ? 'Edit employee' : 'New employee'"
+  (closed)="closePanel()">
+  <div class="form-grid">
     <label><span>Name</span><input [(ngModel)]="form.name" /></label>
     <label><span>Email</span><input [(ngModel)]="form.email" /></label>
-    <label><span>Hire Date</span><input type="date" [(ngModel)]="form.hireDate" /></label>
-    <label><span>Leave Balance</span><input type="number" min="0" [(ngModel)]="form.leaveBalance" /></label>
+    <label><span>Hire date</span><input type="date" [(ngModel)]="form.hireDate" /></label>
+    <label><span>Leave balance</span><input type="number" min="0" [(ngModel)]="form.leaveBalance" /></label>
     <label>
       Grade
       <select [(ngModel)]="form.gradeId">
@@ -64,26 +87,9 @@
       </select>
     </label>
   </div>
-  <div class="toolbar">
-    <button (click)="create()">Add Employee</button>
-    <button (click)="update()">Save Changes</button>
-    <button class="danger" (click)="remove()">Remove Employee</button>
+  <div class="toolbar so-toolbar">
+    <button type="button" class="danger" *ngIf="selectedId" (click)="remove()">Remove</button>
+    <button type="button" *ngIf="!selectedId" (click)="create()">Create</button>
+    <button type="button" *ngIf="selectedId" (click)="update()">Save</button>
   </div>
-</section>
-
-<section class="panel">
-  <h2>Salary Calculator</h2>
-  <div class="form-grid">
-    <label>
-      Employee
-      <select [(ngModel)]="salaryEmployeeId">
-        <option value="">-- Select --</option>
-        <option *ngFor="let e of employees" [value]="e.id">{{ e.name }}</option>
-      </select>
-    </label>
-  </div>
-  <div class="toolbar">
-    <button (click)="calculateSalary()">Calculate Monthly Pay</button>
-  </div>
-  <p *ngIf="salaryValue !== null">Monthly pay: {{ salaryValue }}</p>
-</section>
+</app-slide-over-panel>

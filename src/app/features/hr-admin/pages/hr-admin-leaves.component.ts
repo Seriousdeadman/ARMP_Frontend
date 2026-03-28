@@ -1,7 +1,8 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { LeaveRequest, LeaveRequestStatus, LeaveType } from '../../../models/hr.models';
+import { finalize } from 'rxjs/operators';
+import { Employee, LeaveRequest, LeaveRequestStatus, LeaveType } from '../../../models/hr.models';
 import { HrService } from '../../../services/hr.service';
 import { AuthService } from '../../../services/auth.service';
 
@@ -10,7 +11,7 @@ import { AuthService } from '../../../services/auth.service';
   standalone: true,
   imports: [CommonModule, FormsModule],
   templateUrl: './hr-admin-leaves.component.html',
-  styleUrl: './hr-admin-pages.shared.scss'
+  styleUrls: ['./hr-admin-pages.shared.scss', './hr-admin-leaves.component.scss']
 })
 export class HrAdminLeavesComponent implements OnInit {
   private readonly hrService = inject(HrService);
@@ -23,6 +24,9 @@ export class HrAdminLeavesComponent implements OnInit {
   typeFilter: LeaveType | 'ALL' = 'ALL';
   adminPassword = '';
   error: string | null = null;
+  selectedLeave: LeaveRequest | null = null;
+  contextEmployee: Employee | null = null;
+  contextLoading = false;
 
   ngOnInit(): void {
     this.reload();
@@ -38,14 +42,37 @@ export class HrAdminLeavesComponent implements OnInit {
         });
         this.pendingLeaves = visibleLeaves.filter(l => l.status === 'PENDING');
         this.historicalLeaves = visibleLeaves.filter(l => l.status !== 'PENDING');
+        if (this.selectedLeave) {
+          const still = visibleLeaves.find(x => x.id === this.selectedLeave!.id);
+          if (still) {
+            this.selectLeave(still);
+          } else {
+            this.selectedLeave = null;
+            this.contextEmployee = null;
+          }
+        }
       }
     });
   }
 
+  selectLeave(leave: LeaveRequest): void {
+    this.selectedLeave = leave;
+    this.contextLoading = true;
+    this.contextEmployee = null;
+    this.hrService.getEmployee(leave.employee.id)
+      .pipe(finalize(() => { this.contextLoading = false; }))
+      .subscribe({
+        next: emp => this.contextEmployee = emp,
+        error: () => {
+          this.contextEmployee = null;
+        }
+      });
+  }
+
   approve(id: string): void {
-    const password = this.resolveAdminPassword();
+    const password = this.adminPassword.trim();
     if (!password) {
-      this.error = 'Admin password is required to approve/reject.';
+      this.error = 'Enter your current password in the field above to approve or reject.';
       return;
     }
     const leave = this.pendingLeaves.find(l => l.id === id);
@@ -54,7 +81,6 @@ export class HrAdminLeavesComponent implements OnInit {
       return;
     }
     this.error = null;
-    this.adminPassword = password;
     this.hrService.approveLeave(id, password).subscribe({
       next: () => this.reload(),
       error: e => {
@@ -68,9 +94,9 @@ export class HrAdminLeavesComponent implements OnInit {
   }
 
   reject(id: string): void {
-    const password = this.resolveAdminPassword();
+    const password = this.adminPassword.trim();
     if (!password) {
-      this.error = 'Admin password is required to approve/reject.';
+      this.error = 'Enter your current password in the field above to approve or reject.';
       return;
     }
     const leave = this.pendingLeaves.find(l => l.id === id);
@@ -79,7 +105,6 @@ export class HrAdminLeavesComponent implements OnInit {
       return;
     }
     this.error = null;
-    this.adminPassword = password;
     this.hrService.rejectLeave(id, password).subscribe({
       next: () => this.reload(),
       error: e => {
@@ -110,13 +135,5 @@ export class HrAdminLeavesComponent implements OnInit {
     const statusMatch = this.statusFilter === 'ALL' || leave.status === this.statusFilter;
     const typeMatch = this.typeFilter === 'ALL' || leave.type === this.typeFilter;
     return searchMatch && statusMatch && typeMatch;
-  }
-
-  private resolveAdminPassword(): string | null {
-    if (this.adminPassword.trim()) {
-      return this.adminPassword.trim();
-    }
-    const entered = window.prompt('Enter your current admin password to continue:');
-    return entered && entered.trim() ? entered.trim() : null;
   }
 }

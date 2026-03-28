@@ -1,8 +1,12 @@
-import {Component, OnInit, ViewEncapsulation} from '@angular/core';
+import { Component, OnInit, ViewEncapsulation } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { CommonModule } from '@angular/common';
+import { forkJoin, of } from 'rxjs';
+import { catchError, map, switchMap } from 'rxjs/operators';
 import { AuthService } from '../../services/auth.service';
+import { HrService } from '../../services/hr.service';
 import { User, UserRole } from '../../models/user.models';
+import { filterHrMenu, HrMenuBootstrap, HrMenuGroup, isHrWorkspaceUrl } from '../../hr/hr-menu.config';
 
 interface NavItem {
   label: string;
@@ -35,16 +39,6 @@ export class ShellComponent implements OnInit {
       roles: [UserRole.STUDENT]
     },
     {
-      label: 'HR portal',
-      route: '/app/hr',
-      roles: [UserRole.LOGISTICS_STAFF, UserRole.SUPER_ADMIN]
-    },
-    {
-      label: 'HR admin',
-      route: '/app/hr/admin/overview',
-      roles: [UserRole.LOGISTICS_STAFF, UserRole.SUPER_ADMIN]
-    },
-    {
       label: 'Admin',
       route: '/app/admin',
       roles: [UserRole.SUPER_ADMIN]
@@ -57,36 +51,68 @@ export class ShellComponent implements OnInit {
     { label: 'Settings', route: '/app/settings' }
   ];
   isHrMenuOpen = false;
+  hrBootstrap: HrMenuBootstrap | null = null;
+  hrMenuGroups: HrMenuGroup[] = [];
 
   constructor(
     private authService: AuthService,
+    private hrService: HrService,
     private router: Router
   ) {}
 
   ngOnInit(): void {
-    this.authService.currentUser$.subscribe(user => {
-      this.currentUser = user;
+    this.authService.currentUser$.pipe(
+      switchMap(user => {
+        this.currentUser = user;
+        if (!user || !this.needsHrBootstrap(user.role)) {
+          this.hrBootstrap = null;
+          this.refreshHrMenuGroups();
+          return of<HrMenuBootstrap | null>(null);
+        }
+        return forkJoin({
+          leave: this.hrService.getLeaveSummary(),
+          app: this.hrService.getApplicationStatus()
+        }).pipe(
+          map(({ leave, app }) => ({
+            employeeFound: leave?.employeeFound === true,
+            candidateFound: app?.candidateFound === true
+          })),
+          catchError(() => of<HrMenuBootstrap | null>(null))
+        );
+      })
+    ).subscribe(ctx => {
+      this.hrBootstrap = ctx;
+      this.refreshHrMenuGroups();
     });
+  }
+
+  private needsHrBootstrap(role: UserRole): boolean {
+    return (
+      role === UserRole.STUDENT ||
+      role === UserRole.TEACHER ||
+      role === UserRole.LOGISTICS_STAFF ||
+      role === UserRole.SUPER_ADMIN
+    );
   }
 
   getVisibleNavItems(): NavItem[] {
     return this.navItems.filter(item => {
-      if (!item.roles) return true;
-      if (!this.currentUser) return false;
+      if (!item.roles) {
+        return true;
+      }
+      if (!this.currentUser) {
+        return false;
+      }
       return item.roles.includes(this.currentUser.role);
     });
   }
 
-  getVisibleMainNavItems(): NavItem[] {
-    return this.getVisibleNavItems().filter(item => !this.isHrRoute(item.route));
+  private refreshHrMenuGroups(): void {
+    this.hrMenuGroups = filterHrMenu(this.currentUser?.role, this.hrBootstrap ?? undefined);
   }
 
-  getVisibleHrItems(): NavItem[] {
-    return this.getVisibleNavItems().filter(item => this.isHrRoute(item.route));
-  }
-
-  hasHrItems(): boolean {
-    return this.getVisibleHrItems().length > 0;
+  hasHrMenu(): boolean {
+    return this.hrMenuGroups.length > 0;
   }
 
   toggleHrMenu(): void {
@@ -108,20 +134,29 @@ export class ShellComponent implements OnInit {
   }
 
   isHrSectionActive(): boolean {
-    return this.router.url.startsWith('/app/hr');
+    const url = this.router.url.split('?')[0];
+    if (isHrWorkspaceUrl(url)) {
+      return true;
+    }
+    if (this.currentUser?.role === UserRole.STUDENT && url.startsWith('/app/careers')) {
+      return true;
+    }
+    return false;
   }
 
   getUserInitials(): string {
-    if (!this.currentUser) return '';
-    return `${this.currentUser.firstName[0]}${this.currentUser.lastName[0]}`.toUpperCase();
+    if (!this.currentUser) {
+      return '';
+    }
+    const first = (this.currentUser.firstName ?? '').trim();
+    const last = (this.currentUser.lastName ?? '').trim();
+    const a = first.charAt(0) || '?';
+    const b = last.charAt(0) || '?';
+    return `${a}${b}`.toUpperCase();
   }
 
   logout(): void {
     this.authService.logout();
     this.router.navigate(['/login']);
-  }
-
-  private isHrRoute(route: string): boolean {
-    return route.startsWith('/app/hr');
   }
 }

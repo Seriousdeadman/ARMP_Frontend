@@ -71,7 +71,7 @@ export class HrAdminComponent implements OnInit {
     name: '',
     email: '',
     phone: '',
-    status: 'PENDING',
+    status: 'NEW',
     departmentId: '',
     skillsAndExperience: ''
   };
@@ -113,7 +113,7 @@ export class HrAdminComponent implements OnInit {
   selectedSalaryEmployeeName = '';
   salaryAmount: number | null = null;
 
-  readonly candidateStatuses: CandidateStatus[] = ['PENDING', 'ACCEPTED', 'REJECTED'];
+  readonly candidateStatuses: CandidateStatus[] = ['NEW', 'INTERVIEWING', 'ACCEPTED', 'REJECTED'];
   readonly interviewStatuses: InterviewStatus[] = ['PLANNED', 'COMPLETED', 'CANCELED'];
   readonly gradeNames: GradeName[] = ['ASSISTANT', 'MAITRE', 'PROF'];
 
@@ -766,7 +766,7 @@ export class HrAdminComponent implements OnInit {
       name: '',
       email: '',
       phone: '',
-      status: 'PENDING',
+      status: 'NEW',
       departmentId: '',
       skillsAndExperience: ''
     };
