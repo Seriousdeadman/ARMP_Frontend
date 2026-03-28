@@ -61,6 +61,31 @@ export class AuthService {
     return this.currentUserSubject.getValue();
   }
 
+  /**
+   * Refreshes the in-memory user from GET /api/users/me (e.g. after profile name change).
+   * Sidebar and guards use {@link #getCurrentUser}; without this, UI stays stale until re-login.
+   */
+  syncCurrentUserFromServer(): Observable<User> {
+    return this.http.get<User>(`${environment.apiUrl}/api/users/me`).pipe(
+      tap((u) => {
+        this.currentUserSubject.next({
+          id: u.id,
+          firstName: u.firstName,
+          lastName: u.lastName,
+          email: u.email,
+          phone: u.phone ?? '',
+          department: u.department,
+          preferredLanguage: u.preferredLanguage,
+          role: u.role,
+          isActive: u.isActive ?? true,
+          createdAt: u.createdAt ?? '',
+          totalLoginCount: u.totalLoginCount ?? 0,
+          isTwoFactorEnabled: u.isTwoFactorEnabled ?? false
+        });
+      })
+    );
+  }
+
   private handleAuthResponse(response: AuthResponse): void {
     const user: User = {
       id: response.userId,

@@ -2,8 +2,10 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
-import { environment } from '../../../environments/environment.development';
+import { switchMap } from 'rxjs';
+import { environment } from '../../../environments/environment';
 import { User } from '../../models/user.models';
+import { AuthService } from '../../services/auth.service';
 
 @Component({
   selector: 'app-profile',
@@ -22,7 +24,8 @@ export class ProfileComponent implements OnInit {
 
   constructor(
     private fb: FormBuilder,
-    private http: HttpClient
+    private http: HttpClient,
+    private auth: AuthService
   ) {
     this.profileForm = this.fb.group({
       firstName: ['', Validators.required],
@@ -58,18 +61,18 @@ export class ProfileComponent implements OnInit {
     this.successMessage = '';
     this.errorMessage = '';
 
-    this.http.put<User>(
-      `${environment.apiUrl}/api/users/me`,
-      this.profileForm.value
-    ).subscribe({
-      next: () => {
-        this.isSaving = false;
-        this.successMessage = 'Profile updated successfully.';
-      },
-      error: () => {
-        this.isSaving = false;
-        this.errorMessage = 'Failed to update profile.';
-      }
-    });
+    this.http
+      .put<User>(`${environment.apiUrl}/api/users/me`, this.profileForm.value)
+      .pipe(switchMap(() => this.auth.syncCurrentUserFromServer()))
+      .subscribe({
+        next: () => {
+          this.isSaving = false;
+          this.successMessage = 'Profile updated successfully.';
+        },
+        error: () => {
+          this.isSaving = false;
+          this.errorMessage = 'Failed to update profile.';
+        }
+      });
   }
 }
