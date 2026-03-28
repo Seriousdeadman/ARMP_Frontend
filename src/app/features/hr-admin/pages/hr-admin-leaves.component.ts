@@ -1,8 +1,15 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { forkJoin } from 'rxjs';
 import { finalize } from 'rxjs/operators';
-import { Employee, LeaveRequest, LeaveRequestStatus, LeaveType } from '../../../models/hr.models';
+import {
+  Employee,
+  LeaveRequest,
+  LeaveRequestPendingRow,
+  LeaveRequestStatus,
+  LeaveType
+} from '../../../models/hr.models';
 import { HrService } from '../../../services/hr.service';
 import { AuthService } from '../../../services/auth.service';
 
@@ -34,16 +41,20 @@ export class HrAdminLeavesComponent implements OnInit {
 
   reload(): void {
     const currentEmail = this.authService.getCurrentUser()?.email?.toLowerCase();
-    this.hrService.listLeaveRequests().subscribe({
-      next: v => {
-        const visibleLeaves = v.filter(l => {
+    forkJoin({
+      pendingRows: this.hrService.listPendingLeaveRequests(),
+      all: this.hrService.listLeaveRequests()
+    }).subscribe({
+      next: ({ pendingRows, all }) => {
+        this.pendingLeaves = pendingRows.map((r) => this.mapPendingRowToLeaveRequest(r));
+        const visible = all.filter((l) => {
           const isOwnLeave = (l.employee?.email ?? '').toLowerCase() === (currentEmail ?? '');
           return !isOwnLeave;
         });
-        this.pendingLeaves = visibleLeaves.filter(l => l.status === 'PENDING');
-        this.historicalLeaves = visibleLeaves.filter(l => l.status !== 'PENDING');
+        this.historicalLeaves = visible.filter((l) => l.status !== 'PENDING');
+        const merged = [...this.pendingLeaves, ...this.historicalLeaves];
         if (this.selectedLeave) {
-          const still = visibleLeaves.find(x => x.id === this.selectedLeave!.id);
+          const still = merged.find((x) => x.id === this.selectedLeave!.id);
           if (still) {
             this.selectLeave(still);
           } else {
@@ -53,6 +64,27 @@ export class HrAdminLeavesComponent implements OnInit {
         }
       }
     });
+  }
+
+  private mapPendingRowToLeaveRequest(r: LeaveRequestPendingRow): LeaveRequest {
+    const employee: Employee = {
+      id: r.employeeId,
+      name: r.employeeName,
+      email: r.employeeEmail,
+      hireDate: '',
+      leaveBalance: 0,
+      grade: { id: '', name: 'ASSISTANT', baseSalary: 0, hourlyBonus: 0 },
+      department: { id: '', name: '' }
+    };
+    return {
+      id: r.id,
+      startDate: r.startDate,
+      endDate: r.endDate,
+      type: r.type,
+      status: r.status,
+      requestedDays: r.requestedDayCount,
+      employee
+    };
   }
 
   selectLeave(leave: LeaveRequest): void {

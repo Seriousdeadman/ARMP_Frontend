@@ -12,16 +12,12 @@ export const authGuard: CanActivateFn = () => {
   const token = authService.getAccessToken();
   const user = authService.getCurrentUser();
 
-  console.log('Guard check - token:', token);
-  console.log('Guard check - user:', user);
-
   if (token && user) {
     return true;
   }
 
   if (isPlatformBrowser(platformId)) {
     const refreshToken = localStorage.getItem('refreshToken');
-    console.log('Guard check - refreshToken:', refreshToken);
     if (refreshToken) {
       return authService.refreshToken().pipe(
         map(() => true),

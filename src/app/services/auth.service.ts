@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, Observable, tap, map } from 'rxjs';
+import { BehaviorSubject, Observable, tap, map, catchError, of, throwError } from 'rxjs';
+import { firstValueFrom } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { AuthRequest, AuthResponse, RegisterRequest, RefreshTokenRequest } from '../models/auth.models';
 import { User } from '../models/user.models';
@@ -13,6 +14,8 @@ import { PLATFORM_ID, inject } from '@angular/core';
 })
 export class AuthService {
 
+  private static readonly ACCESS_TOKEN_STORAGE_KEY = 'armp_access_token';
+
   private apiUrl = `${environment.apiUrl}/api/auth`;
 
   private currentUserSubject = new BehaviorSubject<User | null>(null);
@@ -24,6 +27,49 @@ export class AuthService {
   );
   private platformId = inject(PLATFORM_ID);
   constructor(private http: HttpClient, ) {}
+
+  private clearAccessTokenOnly(): void {
+    this.accessTokenSubject.next(null);
+    if (isPlatformBrowser(this.platformId)) {
+      sessionStorage.removeItem(AuthService.ACCESS_TOKEN_STORAGE_KEY);
+    }
+  }
+
+  /**
+   * Runs before any routed component. If a refresh token exists, always rotate the access JWT —
+   * sessionStorage may hold an expired access token; hydrating it skips refresh and causes 403 on /api/**.
+   */
+  bootstrapSession(): Promise<void> {
+    if (!isPlatformBrowser(this.platformId)) {
+      return Promise.resolve();
+    }
+    const rt = localStorage.getItem('refreshToken');
+    if (rt) {
+      return firstValueFrom(
+        this.refreshToken().pipe(
+          catchError(() => {
+            this.clearAccessTokenOnly();
+            return of(null);
+          })
+        )
+      ).then(() => undefined);
+    }
+    const stored = sessionStorage.getItem(AuthService.ACCESS_TOKEN_STORAGE_KEY);
+    if (stored) {
+      this.accessTokenSubject.next(stored);
+      if (!this.getCurrentUser()) {
+        return firstValueFrom(
+          this.syncCurrentUserFromServer().pipe(
+            catchError(() => {
+              this.clearAccessTokenOnly();
+              return of(null);
+            })
+          )
+        ).then(() => undefined);
+      }
+    }
+    return Promise.resolve();
+  }
 
   register(request: RegisterRequest): Observable<AuthResponse> {
     return this.http.post<AuthResponse>(`${this.apiUrl}/register`, request).pipe(
@@ -42,12 +88,16 @@ export class AuthService {
     this.accessTokenSubject.next(null);
     if (isPlatformBrowser(this.platformId)) {
       localStorage.removeItem('refreshToken');
+      sessionStorage.removeItem(AuthService.ACCESS_TOKEN_STORAGE_KEY);
     }
   }
 
   refreshToken(): Observable<AuthResponse> {
     const refreshToken = localStorage.getItem('refreshToken');
-    const request: RefreshTokenRequest = { refreshToken: refreshToken! };
+    if (!refreshToken) {
+      return throwError(() => new Error('No refresh token'));
+    }
+    const request: RefreshTokenRequest = { refreshToken };
     return this.http.post<AuthResponse>(`${this.apiUrl}/refresh`, request).pipe(
       tap(response => this.handleAuthResponse(response))
     );
@@ -103,5 +153,8 @@ export class AuthService {
     this.currentUserSubject.next(user);
     this.accessTokenSubject.next(response.accessToken);
     localStorage.setItem('refreshToken', response.refreshToken);
+    if (isPlatformBrowser(this.platformId)) {
+      sessionStorage.setItem(AuthService.ACCESS_TOKEN_STORAGE_KEY, response.accessToken);
+    }
   }
 }

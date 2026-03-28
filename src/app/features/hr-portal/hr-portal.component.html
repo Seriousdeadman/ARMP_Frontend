@@ -1,7 +1,7 @@
 <div class="hr-page" [class.hr-page--dual]="portalView === 'dual'">
   <header class="hr-header">
-    <h1>{{ portalView === 'career' ? 'My career' : portalView === 'employee' ? 'My HR & leave' : 'HR workspace' }}</h1>
-    <p class="hr-sub" *ngIf="portalView === 'dual'">You have both an employee record and an application — manage leave below and review your application status.</p>
+    <h1>{{ portalView === 'career' ? 'My career' : portalView === 'employee' ? 'My HR & leave' : portalView === 'dual' ? 'Overview' : 'HR workspace' }}</h1>
+    <p class="hr-sub" *ngIf="portalView === 'dual'">Employee leave and your application status — both use your login email. Manage leave on the right; application and CV on the left.</p>
     <p class="hr-sub" *ngIf="portalView === 'opsOnly' && !leaveSummary?.employeeFound">Use HR admin for recruitment and people operations. Personal leave appears here when your account is linked to an employee profile.</p>
     <p class="hr-sub" *ngIf="portalView === 'career' || portalView === 'employee'">
       {{ portalView === 'career' ? 'Track your application and CV — data is matched by your login email only.' : 'Leave balance and requests for your employee profile only.' }}

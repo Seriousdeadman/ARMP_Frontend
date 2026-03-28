@@ -74,8 +74,7 @@ export function filterHrMenu(
       label: 'My Career',
       links: [
         { label: 'Career status', route: '/app/hr' },
-        { label: 'Apply & CV', route: '/app/careers' },
-        { label: 'Available roles', route: '/app/careers' }
+        { label: 'Apply & CV', route: '/app/careers' }
       ]
     });
     return groups;
