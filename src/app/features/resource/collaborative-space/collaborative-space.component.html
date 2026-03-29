@@ -16,22 +16,26 @@
     <div class="form-grid">
       <div class="form-group">
         <label>Name</label>
-        <input [(ngModel)]="form.name" />
+        <input [(ngModel)]="form.name" [class.input-invalid]="fieldErrors.name" />
+        <span class="field-error" *ngIf="fieldErrors.name">{{ fieldErrors.name }}</span>
       </div>
 
       <div class="form-group">
         <label>Capacity</label>
-        <input type="number" [(ngModel)]="form.capacity" />
+        <input type="number" min="1" [(ngModel)]="form.capacity" [class.input-invalid]="fieldErrors.capacity" />
+        <span class="field-error" *ngIf="fieldErrors.capacity">{{ fieldErrors.capacity }}</span>
       </div>
 
       <div class="form-group">
         <label>Building</label>
-        <input [(ngModel)]="form.building" />
+        <input [(ngModel)]="form.building" [class.input-invalid]="fieldErrors.building" />
+        <span class="field-error" *ngIf="fieldErrors.building">{{ fieldErrors.building }}</span>
       </div>
 
       <div class="form-group">
         <label>Room</label>
-        <input [(ngModel)]="form.roomNumber" />
+        <input [(ngModel)]="form.roomNumber" [class.input-invalid]="fieldErrors.roomNumber" />
+        <span class="field-error" *ngIf="fieldErrors.roomNumber">{{ fieldErrors.roomNumber }}</span>
       </div>
 
       <div class="form-group">
@@ -77,6 +81,11 @@
 
     <button class="btn-secondary" (click)="resetFilters()">Reset</button>
 
+    <div class="export-actions" *ngIf="!isLoading && displayedSpaces.length > 0">
+      <button type="button" class="btn-secondary btn-export" (click)="exportFilteredCsv()">CSV</button>
+      <button type="button" class="btn-secondary btn-export" (click)="exportFilteredXlsx()">Excel</button>
+    </div>
+
     <span class="result-count">{{ displayedSpaces.length }} result(s)</span>
   </div>
 
@@ -99,7 +108,7 @@
       </thead>
 
       <tbody>
-        <tr *ngFor="let space of displayedSpaces">
+        <tr *ngFor="let space of paginatedSpaces">
           <td>{{ space.name }}</td>
           <td>{{ space.building }}</td>
           <td>{{ space.roomNumber }}</td>
@@ -116,7 +125,7 @@
 
           <td *ngIf="isStaff">
             <button class="btn-edit" (click)="openEdit(space)">Edit</button>
-            <button class="btn-delete" (click)="delete(space.id)">Delete</button>
+            <button class="btn-delete" (click)="requestDelete(space.id)">Delete</button>
           </td>
         </tr>
 
@@ -125,6 +134,32 @@
         </tr>
       </tbody>
     </table>
+
+    <div class="pagination-bar" *ngIf="displayedSpaces.length > 0">
+      <div class="pagination-info">
+        {{ rangeStart }}–{{ rangeEnd }} of {{ displayedSpaces.length }}
+      </div>
+      <label class="page-size-label">
+        Per page
+        <select class="filter-select page-size-select" [(ngModel)]="pageSize" (ngModelChange)="onPageSizeChange()">
+          <option *ngFor="let s of pageSizeOptions" [ngValue]="s">{{ s }}</option>
+        </select>
+      </label>
+      <div class="pagination-nav">
+        <button type="button" class="btn-secondary btn-page" [disabled]="effectivePage <= 1" (click)="prevPage()">Previous</button>
+        <span class="page-indicator">Page {{ effectivePage }} / {{ totalPages }}</span>
+        <button type="button" class="btn-secondary btn-page" [disabled]="effectivePage >= totalPages" (click)="nextPage()">Next</button>
+      </div>
+    </div>
   </div>
+
+  <app-confirm-dialog
+    [visible]="deleteDialogOpen"
+    (visibleChange)="onDeleteDialogClosed($event)"
+    dialogTitle="Delete collaborative space?"
+    confirmBody="This action cannot be undone. The space will be removed from the system."
+    confirmLabel="Delete"
+    (confirmed)="confirmDelete()">
+  </app-confirm-dialog>
 
 </div>

@@ -6,6 +6,46 @@
     <p class="page-sub">Here's what's happening with your account.</p>
   </div>
 
+  <div class="section-title">Campus resources</div>
+  <app-spinner *ngIf="resourceStatsLoading"></app-spinner>
+
+  <div class="stats-grid resource-stats-grid" *ngIf="!resourceStatsLoading && resourceStats">
+    <div class="stat-card stat-card--accent">
+      <div class="stat-label">Total equipment</div>
+      <div class="stat-value">{{ resourceStats.totalEquipment }}</div>
+    </div>
+    <div class="stat-card stat-card--accent">
+      <div class="stat-label">Available resources</div>
+      <div class="stat-value">{{ resourceStats.availableResourcesAll }}</div>
+      <div class="stat-hint">All rooms &amp; gear marked {{ ResourceStatus.AVAILABLE }}</div>
+    </div>
+    <div class="stat-card stat-card--warn">
+      <div class="stat-label">Occupied / unavailable rooms</div>
+      <div class="stat-value">{{ resourceStats.occupiedRooms }}</div>
+      <div class="stat-hint">Classrooms, labs &amp; spaces</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Room locations</div>
+      <div class="stat-value">{{ resourceStats.totalRoomLocations }}</div>
+      <div class="stat-hint">{{ resourceStats.totalClassrooms }} classrooms · {{ resourceStats.totalLaboratories }} labs · {{ resourceStats.totalCollaborativeSpaces }} collab. spaces</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Total seating (rooms)</div>
+      <div class="stat-value">{{ resourceStats.totalSeatingCapacity | number }}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Resources tracked</div>
+      <div class="stat-value">{{ resourceStats.totalResourceRecords }}</div>
+      <div class="stat-hint">{{ resourceStats.availableEquipment }} equipment available</div>
+    </div>
+  </div>
+
+  <div class="resource-error" *ngIf="!resourceStatsLoading && !resourceStats">
+    Resource statistics could not be loaded.
+  </div>
+
+  <div class="section-title section-title--spaced">Your activity</div>
+
   <div class="stats-grid" *ngIf="stats">
     <div class="stat-card">
       <div class="stat-label">Total logins</div>

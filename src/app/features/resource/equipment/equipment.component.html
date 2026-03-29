@@ -16,17 +16,20 @@
     <div class="form-grid">
       <div class="form-group">
         <label>Name</label>
-        <input [(ngModel)]="form.name" />
+        <input [(ngModel)]="form.name" [class.input-invalid]="fieldErrors.name" />
+        <span class="field-error" *ngIf="fieldErrors.name">{{ fieldErrors.name }}</span>
       </div>
 
       <div class="form-group">
         <label>Brand</label>
-        <input [(ngModel)]="form.brand" />
+        <input [(ngModel)]="form.brand" [class.input-invalid]="fieldErrors.brand" />
+        <span class="field-error" *ngIf="fieldErrors.brand">{{ fieldErrors.brand }}</span>
       </div>
 
       <div class="form-group">
         <label>Model</label>
-        <input [(ngModel)]="form.model" />
+        <input [(ngModel)]="form.model" [class.input-invalid]="fieldErrors.model" />
+        <span class="field-error" *ngIf="fieldErrors.model">{{ fieldErrors.model }}</span>
       </div>
 
       <div class="form-group">
@@ -72,6 +75,11 @@
 
     <button class="btn-secondary" (click)="resetFilters()">Reset</button>
 
+    <div class="export-actions" *ngIf="!isLoading && displayedEquipment.length > 0">
+      <button type="button" class="btn-secondary btn-export" (click)="exportFilteredCsv()">CSV</button>
+      <button type="button" class="btn-secondary btn-export" (click)="exportFilteredXlsx()">Excel</button>
+    </div>
+
     <span class="result-count">{{ displayedEquipment.length }} result(s)</span>
   </div>
 
@@ -105,7 +113,7 @@
       </thead>
 
       <tbody>
-        <tr *ngFor="let item of displayedEquipment">
+        <tr *ngFor="let item of paginatedEquipment">
           <td>{{ item.name }}</td>
           <td>{{ item.brand }}</td>
           <td>{{ item.model }}</td>
@@ -121,7 +129,7 @@
 
           <td *ngIf="isStaff">
             <button class="btn-edit" (click)="openEdit(item)">Edit</button>
-            <button class="btn-delete" (click)="delete(item.id)">Delete</button>
+            <button class="btn-delete" (click)="requestDelete(item.id)">Delete</button>
           </td>
         </tr>
 
@@ -130,6 +138,32 @@
         </tr>
       </tbody>
     </table>
+
+    <div class="pagination-bar" *ngIf="displayedEquipment.length > 0">
+      <div class="pagination-info">
+        {{ rangeStart }}–{{ rangeEnd }} of {{ displayedEquipment.length }}
+      </div>
+      <label class="page-size-label">
+        Per page
+        <select class="filter-select page-size-select" [(ngModel)]="pageSize" (ngModelChange)="onPageSizeChange()">
+          <option *ngFor="let s of pageSizeOptions" [ngValue]="s">{{ s }}</option>
+        </select>
+      </label>
+      <div class="pagination-nav">
+        <button type="button" class="btn-secondary btn-page" [disabled]="effectivePage <= 1" (click)="prevPage()">Previous</button>
+        <span class="page-indicator">Page {{ effectivePage }} / {{ totalPages }}</span>
+        <button type="button" class="btn-secondary btn-page" [disabled]="effectivePage >= totalPages" (click)="nextPage()">Next</button>
+      </div>
+    </div>
   </div>
+
+  <app-confirm-dialog
+    [visible]="deleteDialogOpen"
+    (visibleChange)="onDeleteDialogClosed($event)"
+    dialogTitle="Delete equipment?"
+    confirmBody="This action cannot be undone. The equipment record will be removed from the system."
+    confirmLabel="Delete"
+    (confirmed)="confirmDelete()">
+  </app-confirm-dialog>
 
 </div>

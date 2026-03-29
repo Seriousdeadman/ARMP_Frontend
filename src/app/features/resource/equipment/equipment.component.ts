@@ -2,6 +2,8 @@ import { Component, OnInit } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../../environments/environment.development';
 import { AuthService } from '../../../services/auth.service';
+import { ToastService } from '../../../services/toast.service';
+import { ResourceExportService } from '../../../services/resource-export.service';
 import { User, UserRole } from '../../../models/user.models';
 import { Equipment, EquipmentType, ResourceStatus } from '../../../models/resource.models';
 
@@ -20,12 +22,20 @@ export class EquipmentComponent implements OnInit {
   isEditing = false;
   selectedId: number | null = null;
 
-  // ✅ SEARCH / FILTER / SORT
   searchQuery = '';
   filterStatus = 'ALL';
   filterType = 'ALL';
   sortField: keyof Equipment = 'name';
   sortAsc = true;
+
+  page = 1;
+  pageSize = 5;
+  readonly pageSizeOptions = [5, 10, 25];
+
+  deleteDialogOpen = false;
+  pendingDeleteId: number | null = null;
+
+  fieldErrors: Partial<Record<'name' | 'brand' | 'model', string>> = {};
 
   equipmentTypes = Object.values(EquipmentType);
   statusOptions = Object.values(ResourceStatus);
@@ -40,7 +50,9 @@ export class EquipmentComponent implements OnInit {
 
   constructor(
     private http: HttpClient,
-    private authService: AuthService
+    private authService: AuthService,
+    private toastService: ToastService,
+    private exportService: ResourceExportService
   ) {}
 
   ngOnInit(): void {
@@ -53,11 +65,9 @@ export class EquipmentComponent implements OnInit {
            this.currentUser?.role === UserRole.SUPER_ADMIN;
   }
 
-  // ✅ FIXED SORT LOGIC
   get displayedEquipment(): Equipment[] {
     let result = [...this.equipmentList];
 
-    // 🔍 SEARCH
     if (this.searchQuery.trim()) {
       const q = this.searchQuery.toLowerCase();
       result = result.filter(e =>
@@ -67,35 +77,75 @@ export class EquipmentComponent implements OnInit {
       );
     }
 
-    // 🎯 FILTER STATUS
     if (this.filterStatus !== 'ALL') {
       result = result.filter(e => e.status === this.filterStatus);
     }
 
-    // 🎯 FILTER TYPE
     if (this.filterType !== 'ALL') {
       result = result.filter(e => e.equipmentType === this.filterType);
     }
 
-    // 🔀 SORT (FIXED HERE)
     result.sort((a, b) => {
       const valA = a[this.sortField];
       const valB = b[this.sortField];
 
       if (valA === undefined || valB === undefined) return 0;
 
-      // ✅ FIX: check BOTH are numbers
       if (typeof valA === 'number' && typeof valB === 'number') {
         return this.sortAsc ? valA - valB : valB - valA;
       }
 
-      // string fallback
       return this.sortAsc
         ? String(valA).localeCompare(String(valB))
         : String(valB).localeCompare(String(valA));
     });
 
     return result;
+  }
+
+  get effectivePage(): number {
+    return Math.min(Math.max(1, this.page), this.totalPages);
+  }
+
+  get paginatedEquipment(): Equipment[] {
+    const start = (this.effectivePage - 1) * this.pageSize;
+    return this.displayedEquipment.slice(start, start + this.pageSize);
+  }
+
+  get totalPages(): number {
+    return Math.max(1, Math.ceil(this.displayedEquipment.length / this.pageSize));
+  }
+
+  get rangeStart(): number {
+    const n = this.displayedEquipment.length;
+    if (n === 0) return 0;
+    return (this.effectivePage - 1) * this.pageSize + 1;
+  }
+
+  get rangeEnd(): number {
+    const n = this.displayedEquipment.length;
+    if (n === 0) return 0;
+    return Math.min(this.effectivePage * this.pageSize, n);
+  }
+
+  nextPage(): void {
+    const ep = this.effectivePage;
+    if (ep < this.totalPages) this.page = ep + 1;
+  }
+
+  prevPage(): void {
+    const ep = this.effectivePage;
+    if (ep > 1) this.page = ep - 1;
+  }
+
+  onPageSizeChange(): void {
+    const v = Number(this.pageSize);
+    if (!Number.isFinite(v) || v < 1) {
+      this.pageSize = 5;
+    } else if (v > 100) {
+      this.pageSize = 100;
+    }
+    this.page = 1;
   }
 
   setSort(field: keyof Equipment): void {
@@ -118,6 +168,7 @@ export class EquipmentComponent implements OnInit {
     this.filterType = 'ALL';
     this.sortField = 'name';
     this.sortAsc = true;
+    this.page = 1;
   }
 
   loadEquipment(): void {
@@ -129,6 +180,7 @@ export class EquipmentComponent implements OnInit {
       error: (err) => {
         console.error('Failed to load equipment', err);
         this.isLoading = false;
+        this.toastService.error('Failed to load equipment.');
       }
     });
   }
@@ -144,6 +196,7 @@ export class EquipmentComponent implements OnInit {
       status: ResourceStatus.AVAILABLE
     };
     this.showForm = true;
+    this.fieldErrors = {};
   }
 
   openEdit(equipment: Equipment): void {
@@ -157,9 +210,33 @@ export class EquipmentComponent implements OnInit {
       status: equipment.status
     };
     this.showForm = true;
+    this.fieldErrors = {};
+  }
+
+  private validateForm(): boolean {
+    this.fieldErrors = {};
+    let ok = true;
+    if (!this.form.name?.trim()) {
+      this.fieldErrors.name = 'Name is required.';
+      ok = false;
+    }
+    if (!this.form.brand?.trim()) {
+      this.fieldErrors.brand = 'Brand is required.';
+      ok = false;
+    }
+    if (!this.form.model?.trim()) {
+      this.fieldErrors.model = 'Model is required.';
+      ok = false;
+    }
+    return ok;
   }
 
   submit(): void {
+    if (!this.validateForm()) {
+      this.toastService.error('Please fix the highlighted fields.');
+      return;
+    }
+
     if (this.isEditing && this.selectedId !== null) {
       this.http.put<Equipment>(
         `${environment.apiUrl}/api/equipment/${this.selectedId}`,
@@ -170,8 +247,12 @@ export class EquipmentComponent implements OnInit {
             e.id === this.selectedId ? updated : e
           );
           this.showForm = false;
+          this.toastService.success('Equipment updated.');
         },
-        error: (err) => console.error('Failed to update equipment', err)
+        error: (err) => {
+          console.error('Failed to update equipment', err);
+          this.toastService.error('Failed to update equipment.');
+        }
       });
     } else {
       this.http.post<Equipment>(
@@ -181,23 +262,80 @@ export class EquipmentComponent implements OnInit {
         next: (created) => {
           this.equipmentList.push(created);
           this.showForm = false;
+          this.toastService.success('Equipment created.');
         },
-        error: (err) => console.error('Failed to create equipment', err)
+        error: (err) => {
+          console.error('Failed to create equipment', err);
+          this.toastService.error('Failed to create equipment.');
+        }
       });
     }
   }
 
-  delete(id: number): void {
-    if (!confirm('Are you sure you want to delete this equipment?')) return;
+  requestDelete(id: number): void {
+    this.pendingDeleteId = id;
+    this.deleteDialogOpen = true;
+  }
+
+  onDeleteDialogClosed(open: boolean): void {
+    this.deleteDialogOpen = open;
+    if (!open) this.pendingDeleteId = null;
+  }
+
+  confirmDelete(): void {
+    const id = this.pendingDeleteId;
+    if (id == null) return;
+    this.pendingDeleteId = null;
     this.http.delete(`${environment.apiUrl}/api/equipment/${id}`).subscribe({
       next: () => {
         this.equipmentList = this.equipmentList.filter(e => e.id !== id);
       },
-      error: (err) => console.error('Failed to delete equipment', err)
+      error: (err) => {
+        console.error('Failed to delete equipment', err);
+        this.toastService.error('Failed to delete equipment.');
+      }
     });
   }
 
   cancel(): void {
     this.showForm = false;
+  }
+
+  exportFilteredCsv(): void {
+    const rows = this.displayedEquipment.map(e => ({
+      ID: e.id,
+      Name: e.name,
+      Brand: e.brand,
+      Model: e.model,
+      Type: e.equipmentType,
+      Status: e.status,
+      Created: e.createdAt,
+      Updated: e.updatedAt
+    }));
+    if (!rows.length) {
+      this.toastService.info('No rows to export for the current filters.');
+      return;
+    }
+    this.exportService.downloadCsv('equipment-export', rows);
+    this.toastService.success(`Exported ${rows.length} row(s) to CSV.`);
+  }
+
+  exportFilteredXlsx(): void {
+    const rows = this.displayedEquipment.map(e => ({
+      ID: e.id,
+      Name: e.name,
+      Brand: e.brand,
+      Model: e.model,
+      Type: e.equipmentType,
+      Status: e.status,
+      Created: e.createdAt,
+      Updated: e.updatedAt
+    }));
+    if (!rows.length) {
+      this.toastService.info('No rows to export for the current filters.');
+      return;
+    }
+    this.exportService.downloadXlsx('equipment-export', 'Equipment', rows);
+    this.toastService.success(`Exported ${rows.length} row(s) to Excel.`);
   }
 }
