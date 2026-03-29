@@ -35,6 +35,17 @@ describe('hr-portal-mode', () => {
     expect(showEmployeeSection('opsOnly', true)).toBe(true);
   });
 
+  it('logistics with employee is employee not dual', () => {
+    const ctx = buildPortalModeContext(UserRole.LOGISTICS_STAFF, { employeeFound: true }, null);
+    expect(resolveHrPortalView(ctx)).toBe('employee');
+    expect(showCareerSection('employee')).toBe(false);
+  });
+
+  it('super admin with employee is employee not dual', () => {
+    const ctx = buildPortalModeContext(UserRole.SUPER_ADMIN, { employeeFound: true }, null);
+    expect(resolveHrPortalView(ctx)).toBe('employee');
+  });
+
   it('dual shows employee section without employeeFound for loading edge', () => {
     expect(showEmployeeSection('dual', false)).toBe(true);
   });

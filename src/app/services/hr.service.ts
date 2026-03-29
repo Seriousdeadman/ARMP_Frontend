@@ -168,6 +168,10 @@ export class HrService {
     return this.http.get<Candidate[]>(`${this.adminBase}/candidates`);
   }
 
+  getCandidate(id: string): Observable<Candidate> {
+    return this.http.get<Candidate>(`${this.adminBase}/candidates/${id}`);
+  }
+
   createCandidate(payload: CandidateRequest): Observable<Candidate> {
     return this.http.post<Candidate>(`${this.adminBase}/candidates`, payload);
   }

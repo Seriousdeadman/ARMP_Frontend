@@ -33,6 +33,7 @@
             <div class="mega-label">{{ group.label }}</div>
             <a *ngFor="let link of group.links"
                [routerLink]="link.route"
+               [routerLinkActiveOptions]="hrLinkActiveOptions(link.route)"
                routerLinkActive="active"
                class="nav-item nav-subitem mega-link">
               {{ link.label }}

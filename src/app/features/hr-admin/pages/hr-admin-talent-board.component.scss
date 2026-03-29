@@ -85,14 +85,36 @@
   background: #fff;
   border: 1px solid #e6e4de;
   border-radius: 10px;
-  padding: 10px 10px 12px;
+  padding: 0 0 10px;
   margin-bottom: 8px;
-  cursor: grab;
   position: relative;
 }
 
-.kanban-card:active {
+.kanban-card-drag {
+  cursor: grab;
+  padding: 10px 10px 8px;
+  position: relative;
+}
+
+.kanban-card:active .kanban-card-drag {
   cursor: grabbing;
+}
+
+.card-review {
+  display: block;
+  width: calc(100% - 16px);
+  margin: 0 8px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid #e6e4de;
+  background: #fbfaf7;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.card-review:hover {
+  background: #ece8df;
 }
 
 .cdk-drag-preview {
@@ -188,4 +210,67 @@
 
 .error {
   color: #a32020;
+}
+
+.tb-review {
+  color: #6e6a62;
+  font-size: 14px;
+}
+
+.review-dl {
+  margin: 0 0 16px;
+  font-size: 13px;
+}
+
+.review-dl div {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.review-dl dt {
+  margin: 0;
+  color: #6e6a62;
+  font-weight: 600;
+}
+
+.review-dl dd {
+  margin: 0;
+  word-break: break-word;
+}
+
+.review-section {
+  margin-top: 16px;
+}
+
+.review-h3 {
+  margin: 0 0 8px;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #6e6a62;
+}
+
+.review-text {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.45;
+  white-space: pre-wrap;
+}
+
+.review-file-meta {
+  margin: 0 0 10px;
+  font-size: 13px;
+  word-break: break-all;
+}
+
+.review-actions {
+  margin-top: 20px;
+}
+
+.review-actions .inline-link {
+  display: inline-block;
+  text-decoration: none;
+  text-align: center;
 }

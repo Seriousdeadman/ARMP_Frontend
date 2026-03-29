@@ -2,8 +2,16 @@ import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CdkDragDrop, DragDropModule, moveItemInArray, transferArrayItem } from '@angular/cdk/drag-drop';
-import { finalize } from 'rxjs/operators';
-import { CandidateRecruitmentRow, CandidateStatus, Grade } from '../../../models/hr.models';
+import { forkJoin, of } from 'rxjs';
+import { catchError, finalize } from 'rxjs/operators';
+import {
+  Candidate,
+  CandidateRecruitmentRow,
+  CandidateStatus,
+  CvFileMetadata,
+  Grade
+} from '../../../models/hr.models';
+import { RouterLink } from '@angular/router';
 import { HrService } from '../../../services/hr.service';
 import { SlideOverPanelComponent } from '../../../shared/slide-over-panel/slide-over-panel.component';
 
@@ -18,7 +26,7 @@ interface KanbanColumn {
 @Component({
   selector: 'app-hr-admin-talent-board',
   standalone: true,
-  imports: [CommonModule, FormsModule, DragDropModule, SlideOverPanelComponent],
+  imports: [CommonModule, FormsModule, DragDropModule, RouterLink, SlideOverPanelComponent],
   templateUrl: './hr-admin-talent-board.component.html',
   styleUrl: './hr-admin-talent-board.component.scss'
 })
@@ -40,6 +48,12 @@ export class HrAdminTalentBoardComponent implements OnInit {
   selectedGradeId = '';
   hireSubmitting = false;
   hireError: string | null = null;
+
+  reviewPanelOpen = false;
+  reviewLoading = false;
+  reviewError: string | null = null;
+  reviewDetail: Candidate | null = null;
+  reviewFileMeta: CvFileMetadata | null = null;
 
   ngOnInit(): void {
     this.reload();
@@ -104,6 +118,13 @@ export class HrAdminTalentBoardComponent implements OnInit {
     if (row.status === targetStatus) {
       return;
     }
+    if (
+      row.status === 'ACCEPTED'
+      && (targetStatus === 'NEW' || targetStatus === 'INTERVIEWING')
+    ) {
+      this.error = 'Cannot move an accepted candidate back to New or Interviewing.';
+      return;
+    }
     this.error = null;
     transferArrayItem(
       event.previousContainer.data,
@@ -157,5 +178,56 @@ export class HrAdminTalentBoardComponent implements OnInit {
 
   skipHire(): void {
     this.closeHirePanel();
+  }
+
+  openReview(row: CandidateRecruitmentRow): void {
+    this.reviewPanelOpen = true;
+    this.reviewLoading = true;
+    this.reviewError = null;
+    this.reviewDetail = null;
+    this.reviewFileMeta = null;
+    forkJoin({
+      candidate: this.hr.getCandidate(row.id),
+      meta: this.hr.getCandidateCvFileMetadata(row.id).pipe(catchError(() => of(null)))
+    })
+      .pipe(finalize(() => { this.reviewLoading = false; }))
+      .subscribe({
+        next: ({ candidate, meta }) => {
+          this.reviewDetail = candidate;
+          this.reviewFileMeta = meta;
+        },
+        error: err => {
+          this.reviewError = err?.error?.message ?? 'Could not load candidate';
+        }
+      });
+  }
+
+  closeReview(): void {
+    this.reviewPanelOpen = false;
+    this.reviewDetail = null;
+    this.reviewFileMeta = null;
+    this.reviewError = null;
+  }
+
+  downloadReviewCv(): void {
+    const id = this.reviewDetail?.id;
+    if (!id) {
+      return;
+    }
+    this.reviewError = null;
+    this.hr.downloadCandidateCvFile(id).subscribe({
+      next: blob => {
+        const name = this.reviewFileMeta?.fileName?.trim() || 'cv';
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = name;
+        a.click();
+        URL.revokeObjectURL(url);
+      },
+      error: () => {
+        this.reviewError = 'Could not download file';
+      }
+    });
   }
 }

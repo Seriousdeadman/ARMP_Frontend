@@ -18,7 +18,7 @@ export function resolveHrPortalView(ctx: HrPortalModeContext): HrPortalView {
 
   if (role === UserRole.LOGISTICS_STAFF || role === UserRole.SUPER_ADMIN) {
     if (employeeFound) {
-      return 'dual';
+      return 'employee';
     }
     return 'opsOnly';
   }

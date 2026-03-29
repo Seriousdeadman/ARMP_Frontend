@@ -1,7 +1,10 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
+import { ActivatedRoute, Router } from '@angular/router';
+import { filter, map } from 'rxjs/operators';
+import { Subscription } from 'rxjs';
 import { Candidate, Interview, InterviewRequest, InterviewStatus } from '../../../models/hr.models';
 import { HrService } from '../../../services/hr.service';
 
@@ -12,8 +15,11 @@ import { HrService } from '../../../services/hr.service';
   templateUrl: './hr-admin-interviews.component.html',
   styleUrl: './hr-admin-pages.shared.scss'
 })
-export class HrAdminInterviewsComponent implements OnInit {
+export class HrAdminInterviewsComponent implements OnInit, OnDestroy {
   private readonly hrService = inject(HrService);
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
+  private routeSub: Subscription | null = null;
 
   interviews: Interview[] = [];
   candidates: Candidate[] = [];
@@ -28,7 +34,51 @@ export class HrAdminInterviewsComponent implements OnInit {
 
   ngOnInit(): void {
     this.reload();
-    this.hrService.listCandidates().subscribe({ next: v => this.candidates = v });
+    this.hrService.listCandidates().subscribe({
+      next: v => {
+        this.candidates = v;
+        this.applyCandidateQueryParam();
+      }
+    });
+    this.routeSub = this.route.queryParamMap
+      .pipe(
+        map(p => p.get('candidateId')?.trim() ?? ''),
+        filter(id => id.length > 0)
+      )
+      .subscribe(() => {
+        if (this.candidates.length > 0) {
+          this.applyCandidateQueryParam();
+        }
+      });
+  }
+
+  ngOnDestroy(): void {
+    this.routeSub?.unsubscribe();
+  }
+
+  private applyCandidateQueryParam(): void {
+    const id = this.route.snapshot.queryParamMap.get('candidateId')?.trim();
+    if (!id) {
+      return;
+    }
+    const exists = this.candidates.some(c => c.id === id);
+    if (!exists) {
+      return;
+    }
+    this.selectedId = '';
+    this.form = {
+      interviewDate: '',
+      location: '',
+      score: null,
+      status: 'PLANNED',
+      candidateId: id
+    };
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { candidateId: null },
+      queryParamsHandling: 'merge',
+      replaceUrl: true
+    });
   }
 
   reload(): void {

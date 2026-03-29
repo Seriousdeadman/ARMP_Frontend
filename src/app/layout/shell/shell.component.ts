@@ -1,5 +1,5 @@
 import { Component, OnInit, ViewEncapsulation } from '@angular/core';
-import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { IsActiveMatchOptions, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { forkJoin, of } from 'rxjs';
 import { catchError, map, switchMap } from 'rxjs/operators';
@@ -142,6 +142,23 @@ export class ShellComponent implements OnInit {
       return true;
     }
     return false;
+  }
+
+  hrLinkActiveOptions(route: string): IsActiveMatchOptions {
+    if (route === '/app/hr') {
+      return {
+        paths: 'exact',
+        matrixParams: 'ignored',
+        queryParams: 'ignored',
+        fragment: 'ignored'
+      };
+    }
+    return {
+      paths: 'subset',
+      matrixParams: 'ignored',
+      queryParams: 'ignored',
+      fragment: 'ignored'
+    };
   }
 
   getUserInitials(): string {

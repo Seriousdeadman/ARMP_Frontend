@@ -21,10 +21,13 @@
           *ngFor="let c of col.cards; trackBy: trackCard"
           cdkDrag
           class="kanban-card">
-          <div class="card-title">{{ c.name }}</div>
-          <div class="card-meta">{{ c.email }}</div>
-          <div class="card-dept" *ngIf="c.departmentName">{{ c.departmentName }}</div>
-          <div class="score-badge" *ngIf="c.interviewScore != null">{{ c.interviewScore }}/20</div>
+          <div class="kanban-card-drag" cdkDragHandle>
+            <div class="card-title">{{ c.name }}</div>
+            <div class="card-meta">{{ c.email }}</div>
+            <div class="card-dept" *ngIf="c.departmentName">{{ c.departmentName }}</div>
+            <div class="score-badge" *ngIf="c.interviewScore != null">{{ c.interviewScore }}/20</div>
+          </div>
+          <button type="button" class="card-review" (click)="openReview(c)">Review</button>
         </article>
         <div *ngIf="col.cards.length === 0" class="kanban-empty">Drop here</div>
       </div>
@@ -51,5 +54,49 @@
         {{ hireSubmitting ? 'Hiring…' : 'Hire' }}
       </button>
     </div>
+  </ng-container>
+</app-slide-over-panel>
+
+<app-slide-over-panel
+  [open]="reviewPanelOpen"
+  title="Candidate review"
+  (closed)="closeReview()">
+  <div class="tb-review" *ngIf="reviewLoading">Loading…</div>
+  <p class="error" *ngIf="reviewError">{{ reviewError }}</p>
+  <ng-container *ngIf="!reviewLoading && reviewDetail">
+    <dl class="review-dl">
+      <div><dt>Status</dt><dd>{{ reviewDetail.status }}</dd></div>
+      <div><dt>Email</dt><dd>{{ reviewDetail.email }}</dd></div>
+      <div *ngIf="reviewDetail.phone"><dt>Phone</dt><dd>{{ reviewDetail.phone }}</dd></div>
+      <div *ngIf="reviewDetail.department?.name"><dt>Department</dt><dd>{{ reviewDetail.department.name }}</dd></div>
+    </dl>
+    <section class="review-section" *ngIf="reviewDetail.cv?.skillsAndExperience">
+      <h3 class="review-h3">Skills &amp; experience</h3>
+      <p class="review-text">{{ reviewDetail.cv?.skillsAndExperience }}</p>
+    </section>
+    <section class="review-section">
+      <h3 class="review-h3">Uploaded file</h3>
+      <ng-container *ngIf="reviewFileMeta as meta">
+        <p class="muted" *ngIf="!meta.filePresent">No CV file on record.</p>
+        <ng-container *ngIf="meta.filePresent">
+          <p class="review-file-meta">{{ meta.fileName }}<span *ngIf="meta.sizeBytes"> · {{ meta.sizeBytes | number }} bytes</span></p>
+          <button type="button" class="btn-primary" (click)="downloadReviewCv()">Download CV</button>
+        </ng-container>
+      </ng-container>
+      <ng-container *ngIf="!reviewFileMeta && reviewDetail.cv?.fileName">
+        <p class="review-file-meta">{{ reviewDetail.cv?.fileName }}</p>
+        <button type="button" class="btn-primary" (click)="downloadReviewCv()">Download CV</button>
+      </ng-container>
+      <p class="muted" *ngIf="!reviewFileMeta && !reviewDetail.cv?.fileName">No CV file on record.</p>
+    </section>
+    <p class="review-actions" *ngIf="reviewDetail">
+      <a
+        class="btn-primary inline-link"
+        [routerLink]="['/app/hr/admin/interviews']"
+        [queryParams]="{ candidateId: reviewDetail.id }"
+        (click)="closeReview()">
+        Schedule interview
+      </a>
+    </p>
   </ng-container>
 </app-slide-over-panel>
