@@ -81,8 +81,6 @@ export interface CandidateRequest {
 }
 
 export interface CareersApplicationRequest {
-  name: string;
-  phone: string;
   departmentId: string;
   skillsAndExperience: string;
 }

@@ -149,11 +149,8 @@ export const routes: Routes = [
       },
       {
         path: 'careers',
-        canActivate: [roleGuard],
-        data: { roles: [UserRole.STUDENT] },
-        loadComponent: () =>
-          import('./features/careers/careers.component')
-            .then(m => m.CareersComponent)
+        redirectTo: 'hr',
+        pathMatch: 'full'
       }
     ]
   },

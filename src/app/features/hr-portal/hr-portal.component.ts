@@ -11,7 +11,7 @@ import {
   LeaveTypeCode,
   PortalLeaveRequestRow
 } from '../../services/hr.service';
-import { CvFileMetadata } from '../../models/hr.models';
+import { CvFileMetadata, Department, CareersApplication } from '../../models/hr.models';
 import { AuthService } from '../../services/auth.service';
 import { UserRole } from '../../models/user.models';
 import {
@@ -83,6 +83,17 @@ export class HrPortalComponent implements OnInit {
   applicationError: string | null = null;
   leaveError: string | null = null;
   historyError: string | null = null;
+
+  departments: Department[] = [];
+  application: CareersApplication | null = null;
+  applicationSaving = false;
+  applicationSaveMessage: string | null = null;
+  applicationSaveError: string | null = null;
+
+  applicationForm = this.fb.nonNullable.group({
+    departmentId: ['', Validators.required],
+    skillsAndExperience: ['', Validators.required]
+  });
 
   leaveSubmitting = false;
   leaveSubmitMessage: string | null = null;
@@ -156,6 +167,7 @@ export class HrPortalComponent implements OnInit {
           this.recomputeView();
           if (this.showCareer) {
             this.loadCvMetadata();
+            this.loadCareerData();
           }
         },
         error: (err: HttpErrorResponse) => {
@@ -315,5 +327,69 @@ export class HrPortalComponent implements OnInit {
 
   onCvDragLeave(): void {
     this.cvDragOver = false;
+  }
+
+  downloadCvFile(): void {
+    this.hr.downloadMyApplicationCvFile().subscribe({
+      next: (blob) => {
+        const fileName = this.cvMetadata?.fileName || 'cv-file';
+        const url = window.URL.createObjectURL(blob);
+        const anchor = document.createElement('a');
+        anchor.href = url;
+        anchor.download = fileName;
+        anchor.click();
+        window.URL.revokeObjectURL(url);
+      },
+      error: (err: HttpErrorResponse) => {
+        const body = err.error;
+        const msg = body && typeof body === 'object' && 'message' in body ? String((body as any).message) : null;
+        this.cvError = msg || err.message || 'Could not download CV file.';
+      }
+    });
+  }
+
+  loadCareerData(): void {
+    this.hr.listCareerDepartments().subscribe({
+      next: (deps) => this.departments = deps,
+      error: () => {}
+    });
+    this.hr.getMyApplication().subscribe({
+      next: (app) => {
+        this.application = app;
+        if (app) {
+          this.applicationForm.patchValue({
+            departmentId: app.departmentId || '',
+            skillsAndExperience: app.skillsAndExperience || ''
+          });
+        }
+      },
+      error: () => {}
+    });
+  }
+
+  saveApplication(): void {
+    this.applicationSaveMessage = null;
+    this.applicationSaveError = null;
+    if (this.applicationForm.invalid) {
+      this.applicationForm.markAllAsTouched();
+      return;
+    }
+    this.applicationSaving = true;
+    this.hr.saveMyApplication({
+      departmentId: this.applicationForm.value.departmentId!,
+      skillsAndExperience: this.applicationForm.value.skillsAndExperience!
+    }).pipe(finalize(() => { this.applicationSaving = false; }))
+      .subscribe({
+        next: (app) => {
+          this.application = app;
+          this.applicationSaveMessage = 'Application saved.';
+          this.reloadApplicationStatus();
+        },
+        error: (err: HttpErrorResponse) => {
+          const body = err.error;
+          const fromBody = body && typeof body === 'object' && 'message' in body ? String((body as any).message) : null;
+          this.applicationSaveError = fromBody || err.message || 'Save failed.';
+        }
+      });
   }
 }

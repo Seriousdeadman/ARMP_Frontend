@@ -56,9 +56,26 @@
     <div *ngIf="!applicationLoading && applicationError" class="state error">{{ applicationError }}</div>
 
     <ng-container *ngIf="!applicationLoading && !applicationError && applicationStatus">
-      <div *ngIf="!applicationStatus.candidateFound" class="empty-card">
-        <p>No job application is linked to your email yet.</p>
-        <p class="muted small">Submit your profile on <a routerLink="/app/careers">Careers</a>.</p>
+      <div *ngIf="!applicationStatus.candidateFound" class="application-form-card">
+        <p class="panel-hint" style="margin-bottom: 1rem;">Please submit your application details below. Your name and contact information will be securely synced from your profile automatically.</p>
+        <form [formGroup]="applicationForm" (ngSubmit)="saveApplication()" class="leave-form">
+          <label class="field">
+            <span>Department</span>
+            <select formControlName="departmentId">
+              <option value="">Select department</option>
+              <option *ngFor="let d of departments" [value]="d.id">{{ d.name }}</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>Skills &amp; Experience</span>
+            <textarea formControlName="skillsAndExperience" rows="4" placeholder="Briefly describe your skills and experience"></textarea>
+          </label>
+          <button type="submit" class="btn-primary" [disabled]="applicationSaving || applicationForm.invalid">
+            {{ applicationSaving ? 'Saving…' : 'Save Application' }}
+          </button>
+          <p *ngIf="applicationSaveMessage" class="feedback ok">{{ applicationSaveMessage }}</p>
+          <p *ngIf="applicationSaveError" class="feedback err">{{ applicationSaveError }}</p>
+        </form>
       </div>
 
       <div *ngIf="applicationStatus.candidateFound" class="status-card">
@@ -79,31 +96,48 @@
       </div>
     </ng-container>
 
-    <div class="vault" *ngIf="!applicationLoading">
+    <div class="vault" *ngIf="!applicationLoading && applicationStatus?.candidateFound">
       <h3 class="vault-title">CV vault</h3>
-      <p class="panel-hint">Drag &amp; drop a PDF or other accepted file, or browse.</p>
-      <div
-        class="drop-zone"
-        [class.drop-zone--active]="cvDragOver"
-        (dragover)="onCvDragOver($event)"
-        (dragleave)="onCvDragLeave()"
-        (drop)="onCvDrop($event)"
-      >
-        <input
-          type="file"
-          class="file-input"
-          [disabled]="cvUploading"
-          (change)="onCvInputChange($event)"
-          accept=".pdf,.doc,.docx,image/*"
-        />
-        <span class="drop-zone-text">{{ cvUploading ? 'Uploading…' : 'Drop your CV here or click to choose' }}</span>
-      </div>
-      <p class="muted small" *ngIf="cvMetadata?.filePresent">
-        Current file: <strong>{{ cvMetadata?.fileName }}</strong>
-      </p>
+      
+      <ng-container *ngIf="!cvMetadata?.filePresent; else cvLocked">
+        <p class="panel-hint">Drag &amp; drop a PDF or other accepted file, or browse.</p>
+        <div
+          class="drop-zone"
+          [class.drop-zone--active]="cvDragOver"
+          (dragover)="onCvDragOver($event)"
+          (dragleave)="onCvDragLeave()"
+          (drop)="onCvDrop($event)"
+        >
+          <input
+            type="file"
+            class="file-input"
+            [disabled]="cvUploading"
+            (change)="onCvInputChange($event)"
+            accept=".pdf,.doc,.docx,image/*"
+          />
+          <span class="drop-zone-text">{{ cvUploading ? 'Uploading…' : 'Drop your CV here or click to choose' }}</span>
+        </div>
+      </ng-container>
+
+      <ng-template #cvLocked>
+        <div class="status-card" style="margin-top: 1rem;">
+          <p class="status-message">Your CV file has been safely locked and submitted.</p>
+          <dl class="detail-list" style="margin-top: 10px; margin-bottom: 1rem;">
+            <div>
+              <dt>Current file</dt>
+              <dd><strong>{{ cvMetadata?.fileName }}</strong></dd>
+            </div>
+            <div>
+              <dt>Note</dt>
+              <dd>You can no longer change your CV. Contact HR for manual updates.</dd>
+            </div>
+          </dl>
+          <button type="button" class="btn-primary" (click)="downloadCvFile()">View / Download file</button>
+        </div>
+      </ng-template>
+
       <p *ngIf="cvMessage" class="feedback ok">{{ cvMessage }}</p>
       <p *ngIf="cvError" class="feedback err">{{ cvError }}</p>
-      <a routerLink="/app/careers" class="muted small link-more">Full application form on Careers →</a>
     </div>
   </section>
 </ng-template>
