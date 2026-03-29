@@ -1,6 +1,4 @@
 import { Component, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../../environments/environment.development';
 import { AuthService } from '../../../services/auth.service';
@@ -21,6 +19,13 @@ export class LaboratoryComponent implements OnInit {
   showForm = false;
   isEditing = false;
   selectedId: number | null = null;
+
+  // ✅ Search, filter, sort
+  searchQuery = '';
+  filterStatus = 'ALL';
+  filterType = 'ALL';
+  sortField: keyof Laboratory = 'name';
+  sortAsc = true;
 
   labTypes = Object.values(LabType);
   statusOptions = Object.values(ResourceStatus);
@@ -47,6 +52,71 @@ export class LaboratoryComponent implements OnInit {
   get isStaff(): boolean {
     return this.currentUser?.role === UserRole.LOGISTICS_STAFF ||
            this.currentUser?.role === UserRole.SUPER_ADMIN;
+  }
+
+  // ✅ same logic as classroom
+  get displayedLaboratories(): Laboratory[] {
+    let result = [...this.laboratories];
+
+    // Search
+    if (this.searchQuery.trim()) {
+      const q = this.searchQuery.toLowerCase();
+      result = result.filter(l =>
+        l.name.toLowerCase().includes(q) ||
+        l.building.toLowerCase().includes(q) ||
+        l.roomNumber.toLowerCase().includes(q)
+      );
+    }
+
+    // Filter status
+    if (this.filterStatus !== 'ALL') {
+      result = result.filter(l => l.status === this.filterStatus);
+    }
+
+    // Filter type
+    if (this.filterType !== 'ALL') {
+      result = result.filter(l => l.labType === this.filterType);
+    }
+
+    // Sort
+    result.sort((a, b) => {
+      const valA = a[this.sortField];
+      const valB = b[this.sortField];
+
+      if (valA === undefined || valB === undefined) return 0;
+
+      if (typeof valA === 'number' && typeof valB === 'number') {
+        return this.sortAsc ? valA - valB : valB - valA;
+      }
+
+      return this.sortAsc
+        ? String(valA).localeCompare(String(valB))
+        : String(valB).localeCompare(String(valA));
+    });
+
+    return result;
+  }
+
+  setSort(field: keyof Laboratory): void {
+    if (this.sortField === field) {
+      this.sortAsc = !this.sortAsc;
+    } else {
+      this.sortField = field;
+      this.sortAsc = true;
+    }
+  }
+
+  sortIcon(field: keyof Laboratory): string {
+    if (this.sortField !== field) return '↕';
+    return this.sortAsc ? '↑' : '↓';
+  }
+
+  resetFilters(): void {
+    this.searchQuery = '';
+    this.filterStatus = 'ALL';
+    this.filterType = 'ALL';
+    this.sortField = 'name';
+    this.sortAsc = true;
   }
 
   loadLaboratories(): void {

@@ -20,6 +20,13 @@ export class CollaborativeSpaceComponent implements OnInit {
   isEditing = false;
   selectedId: number | null = null;
 
+  // ✅ SEARCH / FILTER / SORT
+  searchQuery = '';
+  filterStatus = 'ALL';
+  filterType = 'ALL';
+  sortField: keyof CollaborativeSpace = 'name';
+  sortAsc = true;
+
   spaceTypes = Object.values(SpaceType);
   statusOptions = Object.values(ResourceStatus);
 
@@ -45,6 +52,66 @@ export class CollaborativeSpaceComponent implements OnInit {
   get isStaff(): boolean {
     return this.currentUser?.role === UserRole.LOGISTICS_STAFF ||
            this.currentUser?.role === UserRole.SUPER_ADMIN;
+  }
+
+  // ✅ DISPLAYED LIST
+  get displayedSpaces(): CollaborativeSpace[] {
+    let result = [...this.spaces];
+
+    if (this.searchQuery.trim()) {
+      const q = this.searchQuery.toLowerCase();
+      result = result.filter(s =>
+        s.name.toLowerCase().includes(q) ||
+        s.building.toLowerCase().includes(q) ||
+        s.roomNumber.toLowerCase().includes(q)
+      );
+    }
+
+    if (this.filterStatus !== 'ALL') {
+      result = result.filter(s => s.status === this.filterStatus);
+    }
+
+    if (this.filterType !== 'ALL') {
+      result = result.filter(s => s.spaceType === this.filterType);
+    }
+
+    result.sort((a, b) => {
+      const valA = a[this.sortField];
+      const valB = b[this.sortField];
+
+      if (valA === undefined || valB === undefined) return 0;
+
+      if (typeof valA === 'number' && typeof valB === 'number') {
+        return this.sortAsc ? valA - valB : valB - valA;
+      }
+
+      return this.sortAsc
+        ? String(valA).localeCompare(String(valB))
+        : String(valB).localeCompare(String(valA));
+    });
+
+    return result;
+  }
+
+  setSort(field: keyof CollaborativeSpace) {
+    if (this.sortField === field) this.sortAsc = !this.sortAsc;
+    else {
+      this.sortField = field;
+      this.sortAsc = true;
+    }
+  }
+
+  sortIcon(field: keyof CollaborativeSpace): string {
+    if (this.sortField !== field) return '↕';
+    return this.sortAsc ? '↑' : '↓';
+  }
+
+  resetFilters() {
+    this.searchQuery = '';
+    this.filterStatus = 'ALL';
+    this.filterType = 'ALL';
+    this.sortField = 'name';
+    this.sortAsc = true;
   }
 
   loadSpaces(): void {

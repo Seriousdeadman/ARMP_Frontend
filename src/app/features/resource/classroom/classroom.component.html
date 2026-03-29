@@ -1,38 +1,46 @@
 <div class="resource-page">
+
   <div class="page-header">
     <h1 class="page-title">Classrooms</h1>
     <p class="page-sub">Manage all classrooms and their availability.</p>
+
     <button class="btn-primary" *ngIf="isStaff && !showForm" (click)="openCreate()">
       + Add Classroom
     </button>
   </div>
 
-  <!-- Form -->
+  <!-- FORM -->
   <div class="form-card" *ngIf="showForm && isStaff">
     <h2 class="form-title">{{ isEditing ? 'Edit Classroom' : 'New Classroom' }}</h2>
+
     <div class="form-grid">
       <div class="form-group">
         <label>Name</label>
-        <input type="text" [(ngModel)]="form.name" placeholder="e.g. Room A101" />
+        <input [(ngModel)]="form.name" />
       </div>
-      <div class="form-group">
-        <label>Capacity</label>
-        <input type="number" [(ngModel)]="form.capacity" placeholder="e.g. 30" />
-      </div>
+
       <div class="form-group">
         <label>Building</label>
-        <input type="text" [(ngModel)]="form.building" placeholder="e.g. Building A" />
+        <input [(ngModel)]="form.building" />
       </div>
+
       <div class="form-group">
-        <label>Room Number</label>
-        <input type="text" [(ngModel)]="form.roomNumber" placeholder="e.g. A101" />
+        <label>Room</label>
+        <input [(ngModel)]="form.roomNumber" />
       </div>
+
+      <div class="form-group">
+        <label>Capacity</label>
+        <input type="number" [(ngModel)]="form.capacity" />
+      </div>
+
       <div class="form-group">
         <label>Type</label>
         <select [(ngModel)]="form.classroomType">
-          <option *ngFor="let type of classroomTypes" [value]="type">{{ type }}</option>
+          <option *ngFor="let t of classroomTypes" [value]="t">{{ t }}</option>
         </select>
       </div>
+
       <div class="form-group">
         <label>Status</label>
         <select [(ngModel)]="form.status">
@@ -40,51 +48,79 @@
         </select>
       </div>
     </div>
+
     <div class="form-actions">
-      <button class="btn-primary" (click)="submit()">{{ isEditing ? 'Update' : 'Create' }}</button>
+      <button class="btn-primary" (click)="submit()">
+        {{ isEditing ? 'Update' : 'Create' }}
+      </button>
       <button class="btn-secondary" (click)="cancel()">Cancel</button>
     </div>
   </div>
 
-  <!-- Loading -->
+  <!-- TOOLBAR -->
+  <div class="toolbar" *ngIf="!isLoading">
+    <input class="search-input" [(ngModel)]="searchQuery" placeholder="Search by name or building..." />
+
+    <select class="filter-select" [(ngModel)]="filterStatus">
+      <option value="ALL">All statuses</option>
+      <option *ngFor="let s of statusOptions" [value]="s">{{ s }}</option>
+    </select>
+
+    <select class="filter-select" [(ngModel)]="filterType">
+      <option value="ALL">All types</option>
+      <option *ngFor="let t of classroomTypes" [value]="t">{{ t }}</option>
+    </select>
+
+    <button class="btn-secondary" (click)="resetFilters()">Reset</button>
+
+    <span class="result-count">{{ paginatedItems.length }} result(s)</span>
+  </div>
+
+  <!-- LOADING -->
   <div class="loading" *ngIf="isLoading">Loading classrooms...</div>
 
-  <!-- Table -->
+  <!-- TABLE -->
   <div class="table-wrapper" *ngIf="!isLoading">
     <table class="resource-table">
       <thead>
         <tr>
-          <th>Name</th>
-          <th>Building</th>
+          <th class="sortable" (click)="setSort('name')">Name {{ sortIcon('name') }}</th>
+          <th class="sortable" (click)="setSort('building')">Building {{ sortIcon('building') }}</th>
           <th>Room</th>
-          <th>Capacity</th>
-          <th>Type</th>
-          <th>Status</th>
+          <th class="sortable" (click)="setSort('capacity')">Capacity {{ sortIcon('capacity') }}</th>
+          <th class="sortable" (click)="setSort('classroomType')">Type {{ sortIcon('classroomType') }}</th>
+          <th class="sortable" (click)="setSort('status')">Status {{ sortIcon('status') }}</th>
           <th *ngIf="isStaff">Actions</th>
         </tr>
       </thead>
+
       <tbody>
-        <tr *ngFor="let classroom of classrooms">
-          <td>{{ classroom.name }}</td>
-          <td>{{ classroom.building }}</td>
-          <td>{{ classroom.roomNumber }}</td>
-          <td>{{ classroom.capacity }}</td>
-          <td>{{ classroom.classroomType }}</td>
+        <tr *ngFor="let c of paginatedItems">
+          <td>{{ c.name }}</td>
+          <td>{{ c.building }}</td>
+          <td>{{ c.roomNumber }}</td>
+          <td>{{ c.capacity }}</td>
+          <td>{{ c.classroomType }}</td>
+
           <td>
-            <span class="badge" [class.available]="classroom.status === 'AVAILABLE'"
-                                [class.unavailable]="classroom.status === 'UNAVAILABLE'">
-              {{ classroom.status }}
+            <span class="badge"
+              [class.available]="c.status === 'AVAILABLE'"
+              [class.unavailable]="c.status === 'UNAVAILABLE'">
+              {{ c.status }}
             </span>
           </td>
+
           <td *ngIf="isStaff">
-            <button class="btn-edit" (click)="openEdit(classroom)">Edit</button>
-            <button class="btn-delete" (click)="delete(classroom.id)">Delete</button>
+            <button class="btn-edit" (click)="openEdit(c)">Edit</button>
+            <button class="btn-delete" (click)="delete(c.id)">Delete</button>
           </td>
         </tr>
-        <tr *ngIf="classrooms.length === 0">
-          <td colspan="7" class="empty">No classrooms found.</td>
+
+        <tr *ngIf="paginatedItems.length === 0">
+          <td colspan="7" class="empty">No classrooms match your search.</td>
         </tr>
       </tbody>
     </table>
   </div>
+
 </div>

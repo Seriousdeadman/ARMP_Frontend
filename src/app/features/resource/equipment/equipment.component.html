@@ -1,33 +1,41 @@
 <div class="resource-page">
+
   <div class="page-header">
     <h1 class="page-title">Equipment</h1>
     <p class="page-sub">Manage all shared equipment and their status.</p>
+
     <button class="btn-primary" *ngIf="isStaff && !showForm" (click)="openCreate()">
       + Add Equipment
     </button>
   </div>
 
+  <!-- FORM -->
   <div class="form-card" *ngIf="showForm && isStaff">
     <h2 class="form-title">{{ isEditing ? 'Edit Equipment' : 'New Equipment' }}</h2>
+
     <div class="form-grid">
       <div class="form-group">
         <label>Name</label>
-        <input type="text" [(ngModel)]="form.name" placeholder="e.g. Dell Laptop" />
+        <input [(ngModel)]="form.name" />
       </div>
+
       <div class="form-group">
         <label>Brand</label>
-        <input type="text" [(ngModel)]="form.brand" placeholder="e.g. Dell" />
+        <input [(ngModel)]="form.brand" />
       </div>
+
       <div class="form-group">
         <label>Model</label>
-        <input type="text" [(ngModel)]="form.model" placeholder="e.g. Latitude 5520" />
+        <input [(ngModel)]="form.model" />
       </div>
+
       <div class="form-group">
         <label>Type</label>
         <select [(ngModel)]="form.equipmentType">
-          <option *ngFor="let type of equipmentTypes" [value]="type">{{ type }}</option>
+          <option *ngFor="let t of equipmentTypes" [value]="t">{{ t }}</option>
         </select>
       </div>
+
       <div class="form-group">
         <label>Status</label>
         <select [(ngModel)]="form.status">
@@ -35,47 +43,93 @@
         </select>
       </div>
     </div>
+
     <div class="form-actions">
-      <button class="btn-primary" (click)="submit()">{{ isEditing ? 'Update' : 'Create' }}</button>
+      <button class="btn-primary" (click)="submit()">
+        {{ isEditing ? 'Update' : 'Create' }}
+      </button>
       <button class="btn-secondary" (click)="cancel()">Cancel</button>
     </div>
   </div>
 
-  <div class="loading" *ngIf="isLoading">Loading equipment...</div>
+  <!-- TOOLBAR -->
+  <div class="toolbar" *ngIf="!isLoading">
+    <input
+      class="search-input"
+      [(ngModel)]="searchQuery"
+      placeholder="Search by name, brand or model..."
+    />
 
+    <select class="filter-select" [(ngModel)]="filterStatus">
+      <option value="ALL">All statuses</option>
+      <option *ngFor="let s of statusOptions" [value]="s">{{ s }}</option>
+    </select>
+
+    <select class="filter-select" [(ngModel)]="filterType">
+      <option value="ALL">All types</option>
+      <option *ngFor="let t of equipmentTypes" [value]="t">{{ t }}</option>
+    </select>
+
+    <button class="btn-secondary" (click)="resetFilters()">Reset</button>
+
+    <span class="result-count">{{ displayedEquipment.length }} result(s)</span>
+  </div>
+
+  <!-- LOADING -->
+  <div class="loading" *ngIf="isLoading">
+    Loading equipment...
+  </div>
+
+  <!-- TABLE -->
   <div class="table-wrapper" *ngIf="!isLoading">
     <table class="resource-table">
       <thead>
         <tr>
-          <th>Name</th>
-          <th>Brand</th>
-          <th>Model</th>
-          <th>Type</th>
-          <th>Status</th>
+          <th class="sortable" (click)="setSort('name')">
+            Name {{ sortIcon('name') }}
+          </th>
+          <th class="sortable" (click)="setSort('brand')">
+            Brand {{ sortIcon('brand') }}
+          </th>
+          <th class="sortable" (click)="setSort('model')">
+            Model {{ sortIcon('model') }}
+          </th>
+          <th class="sortable" (click)="setSort('equipmentType')">
+            Type {{ sortIcon('equipmentType') }}
+          </th>
+          <th class="sortable" (click)="setSort('status')">
+            Status {{ sortIcon('status') }}
+          </th>
           <th *ngIf="isStaff">Actions</th>
         </tr>
       </thead>
+
       <tbody>
-        <tr *ngFor="let item of equipmentList">
+        <tr *ngFor="let item of displayedEquipment">
           <td>{{ item.name }}</td>
           <td>{{ item.brand }}</td>
           <td>{{ item.model }}</td>
           <td>{{ item.equipmentType }}</td>
+
           <td>
-            <span class="badge" [class.available]="item.status === 'AVAILABLE'"
-                                [class.unavailable]="item.status === 'UNAVAILABLE'">
+            <span class="badge"
+              [class.available]="item.status === 'AVAILABLE'"
+              [class.unavailable]="item.status === 'UNAVAILABLE'">
               {{ item.status }}
             </span>
           </td>
+
           <td *ngIf="isStaff">
             <button class="btn-edit" (click)="openEdit(item)">Edit</button>
             <button class="btn-delete" (click)="delete(item.id)">Delete</button>
           </td>
         </tr>
-        <tr *ngIf="equipmentList.length === 0">
-          <td colspan="6" class="empty">No equipment found.</td>
+
+        <tr *ngIf="displayedEquipment.length === 0">
+          <td colspan="6" class="empty">No equipment match your search.</td>
         </tr>
       </tbody>
     </table>
   </div>
+
 </div>

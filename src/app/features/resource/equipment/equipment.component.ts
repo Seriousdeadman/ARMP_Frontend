@@ -20,6 +20,13 @@ export class EquipmentComponent implements OnInit {
   isEditing = false;
   selectedId: number | null = null;
 
+  // ✅ SEARCH / FILTER / SORT
+  searchQuery = '';
+  filterStatus = 'ALL';
+  filterType = 'ALL';
+  sortField: keyof Equipment = 'name';
+  sortAsc = true;
+
   equipmentTypes = Object.values(EquipmentType);
   statusOptions = Object.values(ResourceStatus);
 
@@ -44,6 +51,73 @@ export class EquipmentComponent implements OnInit {
   get isStaff(): boolean {
     return this.currentUser?.role === UserRole.LOGISTICS_STAFF ||
            this.currentUser?.role === UserRole.SUPER_ADMIN;
+  }
+
+  // ✅ FIXED SORT LOGIC
+  get displayedEquipment(): Equipment[] {
+    let result = [...this.equipmentList];
+
+    // 🔍 SEARCH
+    if (this.searchQuery.trim()) {
+      const q = this.searchQuery.toLowerCase();
+      result = result.filter(e =>
+        e.name.toLowerCase().includes(q) ||
+        e.brand.toLowerCase().includes(q) ||
+        e.model.toLowerCase().includes(q)
+      );
+    }
+
+    // 🎯 FILTER STATUS
+    if (this.filterStatus !== 'ALL') {
+      result = result.filter(e => e.status === this.filterStatus);
+    }
+
+    // 🎯 FILTER TYPE
+    if (this.filterType !== 'ALL') {
+      result = result.filter(e => e.equipmentType === this.filterType);
+    }
+
+    // 🔀 SORT (FIXED HERE)
+    result.sort((a, b) => {
+      const valA = a[this.sortField];
+      const valB = b[this.sortField];
+
+      if (valA === undefined || valB === undefined) return 0;
+
+      // ✅ FIX: check BOTH are numbers
+      if (typeof valA === 'number' && typeof valB === 'number') {
+        return this.sortAsc ? valA - valB : valB - valA;
+      }
+
+      // string fallback
+      return this.sortAsc
+        ? String(valA).localeCompare(String(valB))
+        : String(valB).localeCompare(String(valA));
+    });
+
+    return result;
+  }
+
+  setSort(field: keyof Equipment): void {
+    if (this.sortField === field) {
+      this.sortAsc = !this.sortAsc;
+    } else {
+      this.sortField = field;
+      this.sortAsc = true;
+    }
+  }
+
+  sortIcon(field: keyof Equipment): string {
+    if (this.sortField !== field) return '↕';
+    return this.sortAsc ? '↑' : '↓';
+  }
+
+  resetFilters(): void {
+    this.searchQuery = '';
+    this.filterStatus = 'ALL';
+    this.filterType = 'ALL';
+    this.sortField = 'name';
+    this.sortAsc = true;
   }
 
   loadEquipment(): void {
