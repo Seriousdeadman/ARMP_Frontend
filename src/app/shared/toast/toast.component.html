@@ -5,8 +5,16 @@
     [class.success]="toast.type === 'success'"
     [class.error]="toast.type === 'error'"
     [class.info]="toast.type === 'info'"
+    [class.has-action]="toast.actionLabel"
     (click)="dismiss(toast.id)">
     <span class="toast-message">{{ toast.message }}</span>
+    <button
+      *ngIf="toast.actionLabel && toast.onAction"
+      type="button"
+      class="toast-action"
+      (click)="$event.stopPropagation(); runAction(toast)">
+      {{ toast.actionLabel }}
+    </button>
     <span class="toast-close">×</span>
   </div>
 </div>

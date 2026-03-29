@@ -6,6 +6,7 @@ import { ToastService } from '../../../services/toast.service';
 import { ResourceExportService } from '../../../services/resource-export.service';
 import { User, UserRole } from '../../../models/user.models';
 import { Laboratory, LabType, ResourceStatus } from '../../../models/resource.models';
+import { containsIgnoreCase, multiSort } from '../../../utils/resource-list.utils';
 
 @Component({
   selector: 'app-laboratory',
@@ -21,12 +22,31 @@ export class LaboratoryComponent implements OnInit {
   showForm = false;
   isEditing = false;
   selectedId: number | null = null;
+  private snapshotBeforeEdit: Laboratory | null = null;
 
-  searchQuery = '';
-  filterStatus = 'ALL';
-  filterType = 'ALL';
-  sortField: keyof Laboratory = 'name';
-  sortAsc = true;
+  advSearch = {
+    nameContains: '',
+    buildingContains: '',
+    roomContains: '',
+    capacityMin: '',
+    capacityMax: '',
+    status: 'ALL' as 'ALL' | ResourceStatus,
+    type: 'ALL' as 'ALL' | LabType
+  };
+
+  sortLevel1: { field: keyof Laboratory | ''; asc: boolean } = { field: 'name', asc: true };
+  sortLevel2: { field: keyof Laboratory | ''; asc: boolean } = { field: '', asc: true };
+  sortLevel3: { field: keyof Laboratory | ''; asc: boolean } = { field: '', asc: true };
+
+  readonly sortFieldOptions: { value: keyof Laboratory | ''; label: string }[] = [
+    { value: '', label: '— None —' },
+    { value: 'name', label: 'Name' },
+    { value: 'building', label: 'Building' },
+    { value: 'roomNumber', label: 'Room' },
+    { value: 'capacity', label: 'Capacity' },
+    { value: 'labType', label: 'Type' },
+    { value: 'status', label: 'Status' }
+  ];
 
   page = 1;
   pageSize = 5;
@@ -69,37 +89,35 @@ export class LaboratoryComponent implements OnInit {
   get displayedLaboratories(): Laboratory[] {
     let result = [...this.laboratories];
 
-    if (this.searchQuery.trim()) {
-      const q = this.searchQuery.toLowerCase();
-      result = result.filter(l =>
-        l.name.toLowerCase().includes(q) ||
-        l.building.toLowerCase().includes(q) ||
-        l.roomNumber.toLowerCase().includes(q)
-      );
+    if (this.advSearch.nameContains.trim()) {
+      result = result.filter(l => containsIgnoreCase(l.name, this.advSearch.nameContains));
+    }
+    if (this.advSearch.buildingContains.trim()) {
+      result = result.filter(l => containsIgnoreCase(l.building, this.advSearch.buildingContains));
+    }
+    if (this.advSearch.roomContains.trim()) {
+      result = result.filter(l => containsIgnoreCase(l.roomNumber, this.advSearch.roomContains));
     }
 
-    if (this.filterStatus !== 'ALL') {
-      result = result.filter(l => l.status === this.filterStatus);
+    const capMin = this.advSearch.capacityMin.trim();
+    if (capMin !== '') {
+      const n = Number(capMin);
+      if (Number.isFinite(n)) result = result.filter(l => l.capacity >= n);
+    }
+    const capMax = this.advSearch.capacityMax.trim();
+    if (capMax !== '') {
+      const n = Number(capMax);
+      if (Number.isFinite(n)) result = result.filter(l => l.capacity <= n);
     }
 
-    if (this.filterType !== 'ALL') {
-      result = result.filter(l => l.labType === this.filterType);
+    if (this.advSearch.status !== 'ALL') {
+      result = result.filter(l => l.status === this.advSearch.status);
+    }
+    if (this.advSearch.type !== 'ALL') {
+      result = result.filter(l => l.labType === this.advSearch.type);
     }
 
-    result.sort((a, b) => {
-      const valA = a[this.sortField];
-      const valB = b[this.sortField];
-
-      if (valA === undefined || valB === undefined) return 0;
-
-      if (typeof valA === 'number' && typeof valB === 'number') {
-        return this.sortAsc ? valA - valB : valB - valA;
-      }
-
-      return this.sortAsc
-        ? String(valA).localeCompare(String(valB))
-        : String(valB).localeCompare(String(valA));
-    });
+    result = multiSort(result, [this.sortLevel1, this.sortLevel2, this.sortLevel3]);
 
     return result;
   }
@@ -149,26 +167,23 @@ export class LaboratoryComponent implements OnInit {
     this.page = 1;
   }
 
-  setSort(field: keyof Laboratory): void {
-    if (this.sortField === field) {
-      this.sortAsc = !this.sortAsc;
-    } else {
-      this.sortField = field;
-      this.sortAsc = true;
-    }
-  }
-
-  sortIcon(field: keyof Laboratory): string {
-    if (this.sortField !== field) return '↕';
-    return this.sortAsc ? '↑' : '↓';
+  onSearchOrSortChange(): void {
+    this.page = 1;
   }
 
   resetFilters(): void {
-    this.searchQuery = '';
-    this.filterStatus = 'ALL';
-    this.filterType = 'ALL';
-    this.sortField = 'name';
-    this.sortAsc = true;
+    this.advSearch = {
+      nameContains: '',
+      buildingContains: '',
+      roomContains: '',
+      capacityMin: '',
+      capacityMax: '',
+      status: 'ALL',
+      type: 'ALL'
+    };
+    this.sortLevel1 = { field: 'name', asc: true };
+    this.sortLevel2 = { field: '', asc: true };
+    this.sortLevel3 = { field: '', asc: true };
     this.page = 1;
   }
 
@@ -189,6 +204,7 @@ export class LaboratoryComponent implements OnInit {
   openCreate(): void {
     this.isEditing = false;
     this.selectedId = null;
+    this.snapshotBeforeEdit = null;
     this.form = {
       name: '',
       capacity: 0,
@@ -204,6 +220,7 @@ export class LaboratoryComponent implements OnInit {
   openEdit(lab: Laboratory): void {
     this.isEditing = true;
     this.selectedId = lab.id;
+    this.snapshotBeforeEdit = { ...lab };
     this.form = {
       name: lab.name,
       capacity: lab.capacity,
@@ -239,23 +256,60 @@ export class LaboratoryComponent implements OnInit {
     return ok;
   }
 
+  private labWriteBody() {
+    return {
+      name: this.form.name,
+      capacity: this.form.capacity,
+      building: this.form.building,
+      roomNumber: this.form.roomNumber,
+      labType: this.form.labType,
+      status: this.form.status
+    };
+  }
+
   submit(): void {
     if (!this.validateForm()) {
       this.toastService.error('Please fix the highlighted fields.');
       return;
     }
 
-    if (this.isEditing && this.selectedId !== null) {
+    const body = this.labWriteBody();
+    const restoreId = this.selectedId;
+    const previous = this.snapshotBeforeEdit;
+
+    if (this.isEditing && restoreId !== null) {
       this.http.put<Laboratory>(
-        `${environment.apiUrl}/api/laboratories/${this.selectedId}`,
-        this.form
+        `${environment.apiUrl}/api/laboratories/${restoreId}`,
+        body
       ).subscribe({
-        next: (updated) => {
-          this.laboratories = this.laboratories.map(l =>
-            l.id === this.selectedId ? updated : l
-          );
+        next: () => {
+          this.loadLaboratories();
           this.showForm = false;
-          this.toastService.success('Laboratory updated.');
+          this.snapshotBeforeEdit = null;
+          if (previous) {
+            const id = restoreId;
+            const prevBody = {
+              name: previous.name,
+              capacity: previous.capacity,
+              building: previous.building,
+              roomNumber: previous.roomNumber,
+              labType: previous.labType,
+              status: previous.status
+            };
+            this.toastService.successWithAction(
+              'Laboratory updated.',
+              'Undo',
+              () => {
+                this.http.put(`${environment.apiUrl}/api/laboratories/${id}`, prevBody)
+                  .subscribe({
+                    next: () => this.loadLaboratories(),
+                    error: () => this.toastService.error('Undo failed.')
+                  });
+              }
+            );
+          } else {
+            this.toastService.success('Laboratory updated.');
+          }
         },
         error: (err) => {
           console.error('Failed to update laboratory', err);
@@ -263,20 +317,33 @@ export class LaboratoryComponent implements OnInit {
         }
       });
     } else {
-      this.http.post<Laboratory>(
-        `${environment.apiUrl}/api/laboratories`,
-        this.form
-      ).subscribe({
-        next: (created) => {
-          this.laboratories.push(created);
-          this.showForm = false;
-          this.toastService.success('Laboratory created.');
-        },
-        error: (err) => {
-          console.error('Failed to create laboratory', err);
-          this.toastService.error('Failed to create laboratory.');
-        }
-      });
+      this.http.post<Laboratory>(`${environment.apiUrl}/api/laboratories`, body)
+        .subscribe({
+          next: (created) => {
+            this.loadLaboratories();
+            this.showForm = false;
+            const newId = created?.id;
+            if (newId != null) {
+              this.toastService.successWithAction(
+                'Laboratory created.',
+                'Undo',
+                () => {
+                  this.http.delete(`${environment.apiUrl}/api/laboratories/${newId}`)
+                    .subscribe({
+                      next: () => this.loadLaboratories(),
+                      error: () => this.toastService.error('Undo failed.')
+                    });
+                }
+              );
+            } else {
+              this.toastService.success('Laboratory created.');
+            }
+          },
+          error: (err) => {
+            console.error('Failed to create laboratory', err);
+            this.toastService.error('Failed to create laboratory.');
+          }
+        });
     }
   }
 
@@ -293,10 +360,34 @@ export class LaboratoryComponent implements OnInit {
   confirmDelete(): void {
     const id = this.pendingDeleteId;
     if (id == null) return;
+    const entity = this.laboratories.find(l => l.id === id);
     this.pendingDeleteId = null;
     this.http.delete(`${environment.apiUrl}/api/laboratories/${id}`).subscribe({
       next: () => {
-        this.laboratories = this.laboratories.filter(l => l.id !== id);
+        this.loadLaboratories();
+        if (entity) {
+          const payload = {
+            name: entity.name,
+            capacity: entity.capacity,
+            building: entity.building,
+            roomNumber: entity.roomNumber,
+            labType: entity.labType,
+            status: entity.status
+          };
+          this.toastService.successWithAction(
+            'Laboratory deleted.',
+            'Undo',
+            () => {
+              this.http.post(`${environment.apiUrl}/api/laboratories`, payload)
+                .subscribe({
+                  next: () => this.loadLaboratories(),
+                  error: () => this.toastService.error('Undo failed.')
+                });
+            }
+          );
+        } else {
+          this.toastService.success('Laboratory deleted.');
+        }
       },
       error: (err) => {
         console.error('Failed to delete laboratory', err);
@@ -307,6 +398,7 @@ export class LaboratoryComponent implements OnInit {
 
   cancel(): void {
     this.showForm = false;
+    this.snapshotBeforeEdit = null;
   }
 
   exportFilteredCsv(): void {

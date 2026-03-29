@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+﻿import { Component, OnInit } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../../environments/environment.development';
 import { AuthService } from '../../../services/auth.service';
@@ -6,12 +6,13 @@ import { ToastService } from '../../../services/toast.service';
 import { ResourceExportService } from '../../../services/resource-export.service';
 import { User, UserRole } from '../../../models/user.models';
 import { CollaborativeSpace, SpaceType, ResourceStatus } from '../../../models/resource.models';
+import { containsIgnoreCase, multiSort } from '../../../utils/resource-list.utils';
 
 @Component({
   selector: 'app-collaborative-space',
   standalone: false,
   templateUrl: './collaborative-space.component.html',
-  styleUrl: './collaborative-space.component.scss',
+  styleUrl: './collaborative-space.component.scss'
 })
 export class CollaborativeSpaceComponent implements OnInit {
 
@@ -21,12 +22,31 @@ export class CollaborativeSpaceComponent implements OnInit {
   showForm = false;
   isEditing = false;
   selectedId: number | null = null;
+  private snapshotBeforeEdit: CollaborativeSpace | null = null;
 
-  searchQuery = '';
-  filterStatus = 'ALL';
-  filterType = 'ALL';
-  sortField: keyof CollaborativeSpace = 'name';
-  sortAsc = true;
+  advSearch = {
+    nameContains: '',
+    buildingContains: '',
+    roomContains: '',
+    capacityMin: '',
+    capacityMax: '',
+    status: 'ALL' as 'ALL' | ResourceStatus,
+    type: 'ALL' as 'ALL' | SpaceType
+  };
+
+  sortLevel1: { field: keyof CollaborativeSpace | ''; asc: boolean } = { field: 'name', asc: true };
+  sortLevel2: { field: keyof CollaborativeSpace | ''; asc: boolean } = { field: '', asc: true };
+  sortLevel3: { field: keyof CollaborativeSpace | ''; asc: boolean } = { field: '', asc: true };
+
+  readonly sortFieldOptions: { value: keyof CollaborativeSpace | ''; label: string }[] = [
+    { value: '', label: '— None —' },
+    { value: 'name', label: 'Name' },
+    { value: 'building', label: 'Building' },
+    { value: 'roomNumber', label: 'Room' },
+    { value: 'capacity', label: 'Capacity' },
+    { value: 'spaceType', label: 'Type' },
+    { value: 'status', label: 'Status' }
+  ];
 
   page = 1;
   pageSize = 5;
@@ -69,37 +89,35 @@ export class CollaborativeSpaceComponent implements OnInit {
   get displayedSpaces(): CollaborativeSpace[] {
     let result = [...this.spaces];
 
-    if (this.searchQuery.trim()) {
-      const q = this.searchQuery.toLowerCase();
-      result = result.filter(s =>
-        s.name.toLowerCase().includes(q) ||
-        s.building.toLowerCase().includes(q) ||
-        s.roomNumber.toLowerCase().includes(q)
-      );
+    if (this.advSearch.nameContains.trim()) {
+      result = result.filter(s => containsIgnoreCase(s.name, this.advSearch.nameContains));
+    }
+    if (this.advSearch.buildingContains.trim()) {
+      result = result.filter(s => containsIgnoreCase(s.building, this.advSearch.buildingContains));
+    }
+    if (this.advSearch.roomContains.trim()) {
+      result = result.filter(s => containsIgnoreCase(s.roomNumber, this.advSearch.roomContains));
     }
 
-    if (this.filterStatus !== 'ALL') {
-      result = result.filter(s => s.status === this.filterStatus);
+    const capMin = this.advSearch.capacityMin.trim();
+    if (capMin !== '') {
+      const n = Number(capMin);
+      if (Number.isFinite(n)) result = result.filter(s => s.capacity >= n);
+    }
+    const capMax = this.advSearch.capacityMax.trim();
+    if (capMax !== '') {
+      const n = Number(capMax);
+      if (Number.isFinite(n)) result = result.filter(s => s.capacity <= n);
     }
 
-    if (this.filterType !== 'ALL') {
-      result = result.filter(s => s.spaceType === this.filterType);
+    if (this.advSearch.status !== 'ALL') {
+      result = result.filter(s => s.status === this.advSearch.status);
+    }
+    if (this.advSearch.type !== 'ALL') {
+      result = result.filter(s => s.spaceType === this.advSearch.type);
     }
 
-    result.sort((a, b) => {
-      const valA = a[this.sortField];
-      const valB = b[this.sortField];
-
-      if (valA === undefined || valB === undefined) return 0;
-
-      if (typeof valA === 'number' && typeof valB === 'number') {
-        return this.sortAsc ? valA - valB : valB - valA;
-      }
-
-      return this.sortAsc
-        ? String(valA).localeCompare(String(valB))
-        : String(valB).localeCompare(String(valA));
-    });
+    result = multiSort(result, [this.sortLevel1, this.sortLevel2, this.sortLevel3]);
 
     return result;
   }
@@ -149,25 +167,23 @@ export class CollaborativeSpaceComponent implements OnInit {
     this.page = 1;
   }
 
-  setSort(field: keyof CollaborativeSpace) {
-    if (this.sortField === field) this.sortAsc = !this.sortAsc;
-    else {
-      this.sortField = field;
-      this.sortAsc = true;
-    }
+  onSearchOrSortChange(): void {
+    this.page = 1;
   }
 
-  sortIcon(field: keyof CollaborativeSpace): string {
-    if (this.sortField !== field) return '↕';
-    return this.sortAsc ? '↑' : '↓';
-  }
-
-  resetFilters() {
-    this.searchQuery = '';
-    this.filterStatus = 'ALL';
-    this.filterType = 'ALL';
-    this.sortField = 'name';
-    this.sortAsc = true;
+  resetFilters(): void {
+    this.advSearch = {
+      nameContains: '',
+      buildingContains: '',
+      roomContains: '',
+      capacityMin: '',
+      capacityMax: '',
+      status: 'ALL',
+      type: 'ALL'
+    };
+    this.sortLevel1 = { field: 'name', asc: true };
+    this.sortLevel2 = { field: '', asc: true };
+    this.sortLevel3 = { field: '', asc: true };
     this.page = 1;
   }
 
@@ -188,6 +204,7 @@ export class CollaborativeSpaceComponent implements OnInit {
   openCreate(): void {
     this.isEditing = false;
     this.selectedId = null;
+    this.snapshotBeforeEdit = null;
     this.form = {
       name: '',
       capacity: 0,
@@ -203,6 +220,7 @@ export class CollaborativeSpaceComponent implements OnInit {
   openEdit(space: CollaborativeSpace): void {
     this.isEditing = true;
     this.selectedId = space.id;
+    this.snapshotBeforeEdit = { ...space };
     this.form = {
       name: space.name,
       capacity: space.capacity,
@@ -238,23 +256,60 @@ export class CollaborativeSpaceComponent implements OnInit {
     return ok;
   }
 
+  private spaceWriteBody() {
+    return {
+      name: this.form.name,
+      capacity: this.form.capacity,
+      building: this.form.building,
+      roomNumber: this.form.roomNumber,
+      spaceType: this.form.spaceType,
+      status: this.form.status
+    };
+  }
+
   submit(): void {
     if (!this.validateForm()) {
       this.toastService.error('Please fix the highlighted fields.');
       return;
     }
 
-    if (this.isEditing && this.selectedId !== null) {
+    const body = this.spaceWriteBody();
+    const restoreId = this.selectedId;
+    const previous = this.snapshotBeforeEdit;
+
+    if (this.isEditing && restoreId !== null) {
       this.http.put<CollaborativeSpace>(
-        `${environment.apiUrl}/api/collaborative-spaces/${this.selectedId}`,
-        this.form
+        `${environment.apiUrl}/api/collaborative-spaces/${restoreId}`,
+        body
       ).subscribe({
-        next: (updated) => {
-          this.spaces = this.spaces.map(s =>
-            s.id === this.selectedId ? updated : s
-          );
+        next: () => {
+          this.loadSpaces();
           this.showForm = false;
-          this.toastService.success('Collaborative space updated.');
+          this.snapshotBeforeEdit = null;
+          if (previous) {
+            const id = restoreId;
+            const prevBody = {
+              name: previous.name,
+              capacity: previous.capacity,
+              building: previous.building,
+              roomNumber: previous.roomNumber,
+              spaceType: previous.spaceType,
+              status: previous.status
+            };
+            this.toastService.successWithAction(
+              'Collaborative space updated.',
+              'Undo',
+              () => {
+                this.http.put(`${environment.apiUrl}/api/collaborative-spaces/${id}`, prevBody)
+                  .subscribe({
+                    next: () => this.loadSpaces(),
+                    error: () => this.toastService.error('Undo failed.')
+                  });
+              }
+            );
+          } else {
+            this.toastService.success('Collaborative space updated.');
+          }
         },
         error: (err) => {
           console.error('Failed to update space', err);
@@ -262,20 +317,33 @@ export class CollaborativeSpaceComponent implements OnInit {
         }
       });
     } else {
-      this.http.post<CollaborativeSpace>(
-        `${environment.apiUrl}/api/collaborative-spaces`,
-        this.form
-      ).subscribe({
-        next: (created) => {
-          this.spaces.push(created);
-          this.showForm = false;
-          this.toastService.success('Collaborative space created.');
-        },
-        error: (err) => {
-          console.error('Failed to create space', err);
-          this.toastService.error('Failed to create collaborative space.');
-        }
-      });
+      this.http.post<CollaborativeSpace>(`${environment.apiUrl}/api/collaborative-spaces`, body)
+        .subscribe({
+          next: (created) => {
+            this.loadSpaces();
+            this.showForm = false;
+            const newId = created?.id;
+            if (newId != null) {
+              this.toastService.successWithAction(
+                'Collaborative space created.',
+                'Undo',
+                () => {
+                  this.http.delete(`${environment.apiUrl}/api/collaborative-spaces/${newId}`)
+                    .subscribe({
+                      next: () => this.loadSpaces(),
+                      error: () => this.toastService.error('Undo failed.')
+                    });
+                }
+              );
+            } else {
+              this.toastService.success('Collaborative space created.');
+            }
+          },
+          error: (err) => {
+            console.error('Failed to create space', err);
+            this.toastService.error('Failed to create collaborative space.');
+          }
+        });
     }
   }
 
@@ -292,10 +360,34 @@ export class CollaborativeSpaceComponent implements OnInit {
   confirmDelete(): void {
     const id = this.pendingDeleteId;
     if (id == null) return;
+    const entity = this.spaces.find(s => s.id === id);
     this.pendingDeleteId = null;
     this.http.delete(`${environment.apiUrl}/api/collaborative-spaces/${id}`).subscribe({
       next: () => {
-        this.spaces = this.spaces.filter(s => s.id !== id);
+        this.loadSpaces();
+        if (entity) {
+          const payload = {
+            name: entity.name,
+            capacity: entity.capacity,
+            building: entity.building,
+            roomNumber: entity.roomNumber,
+            spaceType: entity.spaceType,
+            status: entity.status
+          };
+          this.toastService.successWithAction(
+            'Collaborative space deleted.',
+            'Undo',
+            () => {
+              this.http.post(`${environment.apiUrl}/api/collaborative-spaces`, payload)
+                .subscribe({
+                  next: () => this.loadSpaces(),
+                  error: () => this.toastService.error('Undo failed.')
+                });
+            }
+          );
+        } else {
+          this.toastService.success('Collaborative space deleted.');
+        }
       },
       error: (err) => {
         console.error('Failed to delete space', err);
@@ -306,6 +398,7 @@ export class CollaborativeSpaceComponent implements OnInit {
 
   cancel(): void {
     this.showForm = false;
+    this.snapshotBeforeEdit = null;
   }
 
   exportFilteredCsv(): void {

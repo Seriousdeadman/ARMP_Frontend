@@ -5,6 +5,9 @@ export interface Toast {
   id: number;
   message: string;
   type: 'success' | 'error' | 'info';
+  actionLabel?: string;
+  onAction?: () => void;
+  durationMs?: number;
 }
 
 @Injectable({
@@ -17,22 +20,47 @@ export class ToastService {
   private counter = 0;
 
   success(message: string): void {
-    this.add(message, 'success');
+    this.add({ message, type: 'success' });
   }
 
   error(message: string): void {
-    this.add(message, 'error');
+    this.add({ message, type: 'error' });
   }
 
   info(message: string): void {
-    this.add(message, 'info');
+    this.add({ message, type: 'info' });
   }
 
-  private add(message: string, type: 'success' | 'error' | 'info'): void {
+  /**
+   * Success toast with an action (e.g. Undo). Callback should not throw; it is invoked once.
+   */
+  successWithAction(
+    message: string,
+    actionLabel: string,
+    onAction: () => void,
+    durationMs = 8000
+  ): void {
     const id = this.counter++;
-    const toast: Toast = { id, message, type };
+    const toast: Toast = {
+      id,
+      message,
+      type: 'success',
+      durationMs,
+      actionLabel,
+      onAction: () => {
+        onAction();
+        this.remove(id);
+      }
+    };
     this.toasts.next([...this.toasts.getValue(), toast]);
-    setTimeout(() => this.remove(id), 3500);
+    setTimeout(() => this.remove(id), durationMs);
+  }
+
+  private add(partial: Omit<Toast, 'id'>): void {
+    const id = this.counter++;
+    const toast: Toast = { id, ...partial, durationMs: partial.durationMs ?? 3500 };
+    this.toasts.next([...this.toasts.getValue(), toast]);
+    setTimeout(() => this.remove(id), toast.durationMs);
   }
 
   remove(id: number): void {

@@ -9,7 +9,6 @@
     </button>
   </div>
 
-  <!-- FORM -->
   <div class="form-card" *ngIf="showForm && isStaff">
     <h2 class="form-title">{{ isEditing ? 'Edit Equipment' : 'New Equipment' }}</h2>
 
@@ -55,59 +54,76 @@
     </div>
   </div>
 
-  <!-- TOOLBAR -->
-  <div class="toolbar" *ngIf="!isLoading">
-    <input
-      class="search-input"
-      [(ngModel)]="searchQuery"
-      placeholder="Search by name, brand or model..."
-    />
-
-    <select class="filter-select" [(ngModel)]="filterStatus">
-      <option value="ALL">All statuses</option>
-      <option *ngFor="let s of statusOptions" [value]="s">{{ s }}</option>
-    </select>
-
-    <select class="filter-select" [(ngModel)]="filterType">
-      <option value="ALL">All types</option>
-      <option *ngFor="let t of equipmentTypes" [value]="t">{{ t }}</option>
-    </select>
-
-    <button class="btn-secondary" (click)="resetFilters()">Reset</button>
-
-    <div class="export-actions" *ngIf="!isLoading && displayedEquipment.length > 0">
-      <button type="button" class="btn-secondary btn-export" (click)="exportFilteredCsv()">CSV</button>
-      <button type="button" class="btn-secondary btn-export" (click)="exportFilteredXlsx()">Excel</button>
+  <div class="advanced-panel" *ngIf="!isLoading">
+    <div class="advanced-panel-title">Advanced search</div>
+    <p class="advanced-panel-help">All filled criteria must match (AND). Text fields use case-insensitive “contains”.</p>
+    <div class="advanced-grid">
+      <div class="form-group">
+        <label>Name contains</label>
+        <input [(ngModel)]="advSearch.nameContains" (ngModelChange)="onSearchOrSortChange()" />
+      </div>
+      <div class="form-group">
+        <label>Brand contains</label>
+        <input [(ngModel)]="advSearch.brandContains" (ngModelChange)="onSearchOrSortChange()" />
+      </div>
+      <div class="form-group">
+        <label>Model contains</label>
+        <input [(ngModel)]="advSearch.modelContains" (ngModelChange)="onSearchOrSortChange()" />
+      </div>
+      <div class="form-group">
+        <label>Status</label>
+        <select class="filter-select" [(ngModel)]="advSearch.status" (ngModelChange)="onSearchOrSortChange()">
+          <option value="ALL">All statuses</option>
+          <option *ngFor="let s of statusOptions" [value]="s">{{ s }}</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Type</label>
+        <select class="filter-select" [(ngModel)]="advSearch.type" (ngModelChange)="onSearchOrSortChange()">
+          <option value="ALL">All types</option>
+          <option *ngFor="let t of equipmentTypes" [value]="t">{{ t }}</option>
+        </select>
+      </div>
     </div>
 
-    <span class="result-count">{{ displayedEquipment.length }} result(s)</span>
+    <div class="advanced-panel-title advanced-panel-title--second">Sort (up to 3 levels)</div>
+    <p class="advanced-panel-help">Earlier levels win; next levels break ties.</p>
+    <div class="sort-levels">
+      <div class="sort-level" *ngFor="let level of [sortLevel1, sortLevel2, sortLevel3]; let i = index">
+        <span class="sort-level-label">{{ i + 1 }}</span>
+        <select class="filter-select sort-level-field" [(ngModel)]="level.field" (ngModelChange)="onSearchOrSortChange()">
+          <option *ngFor="let opt of sortFieldOptions" [ngValue]="opt.value">{{ opt.label }}</option>
+        </select>
+        <select class="filter-select sort-level-dir" [(ngModel)]="level.asc" (ngModelChange)="onSearchOrSortChange()">
+          <option [ngValue]="true">Ascending</option>
+          <option [ngValue]="false">Descending</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="toolbar-row">
+      <button type="button" class="btn-secondary" (click)="resetFilters()">Reset search &amp; sort</button>
+      <div class="export-actions" *ngIf="displayedEquipment.length > 0">
+        <button type="button" class="btn-secondary btn-export" (click)="exportFilteredCsv()">CSV</button>
+        <button type="button" class="btn-secondary btn-export" (click)="exportFilteredXlsx()">Excel</button>
+      </div>
+      <span class="result-count">{{ displayedEquipment.length }} result(s)</span>
+    </div>
   </div>
 
-  <!-- LOADING -->
   <div class="loading" *ngIf="isLoading">
     Loading equipment...
   </div>
 
-  <!-- TABLE -->
   <div class="table-wrapper" *ngIf="!isLoading">
     <table class="resource-table">
       <thead>
         <tr>
-          <th class="sortable" (click)="setSort('name')">
-            Name {{ sortIcon('name') }}
-          </th>
-          <th class="sortable" (click)="setSort('brand')">
-            Brand {{ sortIcon('brand') }}
-          </th>
-          <th class="sortable" (click)="setSort('model')">
-            Model {{ sortIcon('model') }}
-          </th>
-          <th class="sortable" (click)="setSort('equipmentType')">
-            Type {{ sortIcon('equipmentType') }}
-          </th>
-          <th class="sortable" (click)="setSort('status')">
-            Status {{ sortIcon('status') }}
-          </th>
+          <th>Name</th>
+          <th>Brand</th>
+          <th>Model</th>
+          <th>Type</th>
+          <th>Status</th>
           <th *ngIf="isStaff">Actions</th>
         </tr>
       </thead>
@@ -134,7 +150,7 @@
         </tr>
 
         <tr *ngIf="displayedEquipment.length === 0">
-          <td colspan="6" class="empty">No equipment match your search.</td>
+          <td colspan="6" class="empty">No equipment match your criteria.</td>
         </tr>
       </tbody>
     </table>
@@ -161,7 +177,7 @@
     [visible]="deleteDialogOpen"
     (visibleChange)="onDeleteDialogClosed($event)"
     dialogTitle="Delete equipment?"
-    confirmBody="This action cannot be undone. The equipment record will be removed from the system."
+    confirmBody="The equipment record will be removed. You can undo for a few seconds afterward."
     confirmLabel="Delete"
     (confirmed)="confirmDelete()">
   </app-confirm-dialog>

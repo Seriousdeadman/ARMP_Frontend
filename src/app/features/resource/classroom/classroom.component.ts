@@ -6,6 +6,7 @@ import { ToastService } from '../../../services/toast.service';
 import { ResourceExportService } from '../../../services/resource-export.service';
 import { User, UserRole } from '../../../models/user.models';
 import { Classroom, ClassroomType, ResourceStatus } from '../../../models/resource.models';
+import { containsIgnoreCase, multiSort } from '../../../utils/resource-list.utils';
 
 @Component({
   selector: 'app-classroom',
@@ -21,12 +22,31 @@ export class ClassroomComponent implements OnInit {
   showForm = false;
   isEditing = false;
   selectedId: number | null = null;
+  private snapshotBeforeEdit: Classroom | null = null;
 
-  searchQuery = '';
-  filterStatus = 'ALL';
-  filterType = 'ALL';
-  sortField: keyof Classroom = 'name';
-  sortAsc = true;
+  advSearch = {
+    nameContains: '',
+    buildingContains: '',
+    roomContains: '',
+    capacityMin: '',
+    capacityMax: '',
+    status: 'ALL' as 'ALL' | ResourceStatus,
+    type: 'ALL' as 'ALL' | ClassroomType
+  };
+
+  sortLevel1: { field: keyof Classroom | ''; asc: boolean } = { field: 'name', asc: true };
+  sortLevel2: { field: keyof Classroom | ''; asc: boolean } = { field: '', asc: true };
+  sortLevel3: { field: keyof Classroom | ''; asc: boolean } = { field: '', asc: true };
+
+  readonly sortFieldOptions: { value: keyof Classroom | ''; label: string }[] = [
+    { value: '', label: '— None —' },
+    { value: 'name', label: 'Name' },
+    { value: 'building', label: 'Building' },
+    { value: 'roomNumber', label: 'Room' },
+    { value: 'capacity', label: 'Capacity' },
+    { value: 'classroomType', label: 'Type' },
+    { value: 'status', label: 'Status' }
+  ];
 
   page = 1;
   pageSize = 5;
@@ -69,24 +89,35 @@ export class ClassroomComponent implements OnInit {
   get displayedItems(): Classroom[] {
     let res = [...this.classrooms];
 
-    if (this.searchQuery.trim()) {
-      const q = this.searchQuery.toLowerCase();
-      res = res.filter(c =>
-        c.name.toLowerCase().includes(q) ||
-        c.building.toLowerCase().includes(q) ||
-        c.roomNumber.toLowerCase().includes(q)
-      );
+    if (this.advSearch.nameContains.trim()) {
+      res = res.filter(c => containsIgnoreCase(c.name, this.advSearch.nameContains));
+    }
+    if (this.advSearch.buildingContains.trim()) {
+      res = res.filter(c => containsIgnoreCase(c.building, this.advSearch.buildingContains));
+    }
+    if (this.advSearch.roomContains.trim()) {
+      res = res.filter(c => containsIgnoreCase(c.roomNumber, this.advSearch.roomContains));
     }
 
-    if (this.filterStatus !== 'ALL') res = res.filter(c => c.status === this.filterStatus);
-    if (this.filterType !== 'ALL') res = res.filter(c => c.classroomType === this.filterType);
+    const capMin = this.advSearch.capacityMin.trim();
+    if (capMin !== '') {
+      const n = Number(capMin);
+      if (Number.isFinite(n)) res = res.filter(c => c.capacity >= n);
+    }
+    const capMax = this.advSearch.capacityMax.trim();
+    if (capMax !== '') {
+      const n = Number(capMax);
+      if (Number.isFinite(n)) res = res.filter(c => c.capacity <= n);
+    }
 
-    res.sort((a, b) => {
-      const A = a[this.sortField];
-      const B = b[this.sortField];
-      if (typeof A === 'number' && typeof B === 'number') return this.sortAsc ? A - B : B - A;
-      return this.sortAsc ? String(A).localeCompare(String(B)) : String(B).localeCompare(String(A));
-    });
+    if (this.advSearch.status !== 'ALL') {
+      res = res.filter(c => c.status === this.advSearch.status);
+    }
+    if (this.advSearch.type !== 'ALL') {
+      res = res.filter(c => c.classroomType === this.advSearch.type);
+    }
+
+    res = multiSort(res, [this.sortLevel1, this.sortLevel2, this.sortLevel3]);
 
     return res;
   }
@@ -136,18 +167,23 @@ export class ClassroomComponent implements OnInit {
     this.page = 1;
   }
 
-  setSort(field: keyof Classroom) {
-    this.sortField === field ? this.sortAsc = !this.sortAsc : (this.sortField = field, this.sortAsc = true);
-  }
-
-  sortIcon(field: keyof Classroom) {
-    return this.sortField !== field ? '↕' : this.sortAsc ? '↑' : '↓';
+  onSearchOrSortChange(): void {
+    this.page = 1;
   }
 
   resetFilters() {
-    this.searchQuery = '';
-    this.filterStatus = 'ALL';
-    this.filterType = 'ALL';
+    this.advSearch = {
+      nameContains: '',
+      buildingContains: '',
+      roomContains: '',
+      capacityMin: '',
+      capacityMax: '',
+      status: 'ALL',
+      type: 'ALL'
+    };
+    this.sortLevel1 = { field: 'name', asc: true };
+    this.sortLevel2 = { field: '', asc: true };
+    this.sortLevel3 = { field: '', asc: true };
     this.page = 1;
   }
 
@@ -167,6 +203,7 @@ export class ClassroomComponent implements OnInit {
 
   openCreate() {
     this.isEditing = false;
+    this.snapshotBeforeEdit = null;
     this.showForm = true;
     this.fieldErrors = {};
   }
@@ -174,6 +211,7 @@ export class ClassroomComponent implements OnInit {
   openEdit(c: Classroom) {
     this.isEditing = true;
     this.selectedId = c.id;
+    this.snapshotBeforeEdit = { ...c };
     this.form = { ...c };
     this.showForm = true;
     this.fieldErrors = {};
@@ -202,26 +240,89 @@ export class ClassroomComponent implements OnInit {
     return ok;
   }
 
+  private classroomWriteBody() {
+    return {
+      name: this.form.name,
+      capacity: this.form.capacity,
+      building: this.form.building,
+      roomNumber: this.form.roomNumber,
+      classroomType: this.form.classroomType,
+      status: this.form.status
+    };
+  }
+
   submit() {
     if (!this.validateForm()) {
       this.toastService.error('Please fix the highlighted fields.');
       return;
     }
 
-    const req = this.isEditing
-      ? this.http.put(`${environment.apiUrl}/api/classrooms/${this.selectedId}`, this.form)
-      : this.http.post(`${environment.apiUrl}/api/classrooms`, this.form);
+    const body = this.classroomWriteBody();
+    const restoreId = this.selectedId;
+    const previous = this.snapshotBeforeEdit;
 
-    req.subscribe({
-      next: () => {
-        this.load();
-        this.showForm = false;
-        this.toastService.success(this.isEditing ? 'Classroom updated.' : 'Classroom created.');
-      },
-      error: () => {
-        this.toastService.error(this.isEditing ? 'Failed to update classroom.' : 'Failed to create classroom.');
-      }
-    });
+    if (this.isEditing && restoreId != null) {
+      this.http.put<Classroom>(
+        `${environment.apiUrl}/api/classrooms/${restoreId}`,
+        body
+      ).subscribe({
+        next: () => {
+          this.load();
+          this.showForm = false;
+          this.snapshotBeforeEdit = null;
+          if (previous) {
+            const id = restoreId;
+            const prevBody = {
+              name: previous.name,
+              capacity: previous.capacity,
+              building: previous.building,
+              roomNumber: previous.roomNumber,
+              classroomType: previous.classroomType,
+              status: previous.status
+            };
+            this.toastService.successWithAction(
+              'Classroom updated.',
+              'Undo',
+              () => {
+                this.http.put(`${environment.apiUrl}/api/classrooms/${id}`, prevBody)
+                  .subscribe({
+                    next: () => this.load(),
+                    error: () => this.toastService.error('Undo failed.')
+                  });
+              }
+            );
+          } else {
+            this.toastService.success('Classroom updated.');
+          }
+        },
+        error: () => this.toastService.error('Failed to update classroom.')
+      });
+    } else {
+      this.http.post<Classroom>(`${environment.apiUrl}/api/classrooms`, body)
+        .subscribe({
+          next: (created) => {
+            this.load();
+            this.showForm = false;
+            const newId = created?.id;
+            if (newId != null) {
+              this.toastService.successWithAction(
+                'Classroom created.',
+                'Undo',
+                () => {
+                  this.http.delete(`${environment.apiUrl}/api/classrooms/${newId}`)
+                    .subscribe({
+                      next: () => this.load(),
+                      error: () => this.toastService.error('Undo failed.')
+                    });
+                }
+              );
+            } else {
+              this.toastService.success('Classroom created.');
+            }
+          },
+          error: () => this.toastService.error('Failed to create classroom.')
+        });
+    }
   }
 
   requestDelete(id: number) {
@@ -237,16 +338,43 @@ export class ClassroomComponent implements OnInit {
   confirmDelete() {
     const id = this.pendingDeleteId;
     if (id == null) return;
+    const entity = this.classrooms.find(c => c.id === id);
     this.pendingDeleteId = null;
     this.http.delete(`${environment.apiUrl}/api/classrooms/${id}`)
       .subscribe({
-        next: () => this.load(),
+        next: () => {
+          this.load();
+          if (entity) {
+            const payload = {
+              name: entity.name,
+              capacity: entity.capacity,
+              building: entity.building,
+              roomNumber: entity.roomNumber,
+              classroomType: entity.classroomType,
+              status: entity.status
+            };
+            this.toastService.successWithAction(
+              'Classroom deleted.',
+              'Undo',
+              () => {
+                this.http.post(`${environment.apiUrl}/api/classrooms`, payload)
+                  .subscribe({
+                    next: () => this.load(),
+                    error: () => this.toastService.error('Undo failed.')
+                  });
+              }
+            );
+          } else {
+            this.toastService.success('Classroom deleted.');
+          }
+        },
         error: () => this.toastService.error('Failed to delete classroom.')
       });
   }
 
   cancel() {
     this.showForm = false;
+    this.snapshotBeforeEdit = null;
   }
 
   exportFilteredCsv(): void {

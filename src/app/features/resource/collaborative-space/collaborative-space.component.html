@@ -9,7 +9,6 @@
     </button>
   </div>
 
-  <!-- FORM -->
   <div class="form-card" *ngIf="showForm && isStaff">
     <h2 class="form-title">{{ isEditing ? 'Edit Space' : 'New Space' }}</h2>
 
@@ -61,48 +60,83 @@
     </div>
   </div>
 
-  <!-- TOOLBAR -->
-  <div class="toolbar" *ngIf="!isLoading">
-    <input
-      class="search-input"
-      [(ngModel)]="searchQuery"
-      placeholder="Search by name, building or room..."
-    />
-
-    <select class="filter-select" [(ngModel)]="filterStatus">
-      <option value="ALL">All statuses</option>
-      <option *ngFor="let s of statusOptions" [value]="s">{{ s }}</option>
-    </select>
-
-    <select class="filter-select" [(ngModel)]="filterType">
-      <option value="ALL">All types</option>
-      <option *ngFor="let t of spaceTypes" [value]="t">{{ t }}</option>
-    </select>
-
-    <button class="btn-secondary" (click)="resetFilters()">Reset</button>
-
-    <div class="export-actions" *ngIf="!isLoading && displayedSpaces.length > 0">
-      <button type="button" class="btn-secondary btn-export" (click)="exportFilteredCsv()">CSV</button>
-      <button type="button" class="btn-secondary btn-export" (click)="exportFilteredXlsx()">Excel</button>
+  <div class="advanced-panel" *ngIf="!isLoading">
+    <div class="advanced-panel-title">Advanced search</div>
+    <p class="advanced-panel-help">All filled criteria must match (AND). Text fields use case-insensitive “contains”.</p>
+    <div class="advanced-grid">
+      <div class="form-group">
+        <label>Name contains</label>
+        <input [(ngModel)]="advSearch.nameContains" (ngModelChange)="onSearchOrSortChange()" />
+      </div>
+      <div class="form-group">
+        <label>Building contains</label>
+        <input [(ngModel)]="advSearch.buildingContains" (ngModelChange)="onSearchOrSortChange()" />
+      </div>
+      <div class="form-group">
+        <label>Room contains</label>
+        <input [(ngModel)]="advSearch.roomContains" (ngModelChange)="onSearchOrSortChange()" />
+      </div>
+      <div class="form-group">
+        <label>Capacity min</label>
+        <input type="number" [(ngModel)]="advSearch.capacityMin" (ngModelChange)="onSearchOrSortChange()" />
+      </div>
+      <div class="form-group">
+        <label>Capacity max</label>
+        <input type="number" [(ngModel)]="advSearch.capacityMax" (ngModelChange)="onSearchOrSortChange()" />
+      </div>
+      <div class="form-group">
+        <label>Status</label>
+        <select class="filter-select" [(ngModel)]="advSearch.status" (ngModelChange)="onSearchOrSortChange()">
+          <option value="ALL">All statuses</option>
+          <option *ngFor="let s of statusOptions" [value]="s">{{ s }}</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Type</label>
+        <select class="filter-select" [(ngModel)]="advSearch.type" (ngModelChange)="onSearchOrSortChange()">
+          <option value="ALL">All types</option>
+          <option *ngFor="let t of spaceTypes" [value]="t">{{ t }}</option>
+        </select>
+      </div>
     </div>
 
-    <span class="result-count">{{ displayedSpaces.length }} result(s)</span>
+    <div class="advanced-panel-title advanced-panel-title--second">Sort (up to 3 levels)</div>
+    <p class="advanced-panel-help">Earlier levels win; next levels break ties.</p>
+    <div class="sort-levels">
+      <div class="sort-level" *ngFor="let level of [sortLevel1, sortLevel2, sortLevel3]; let i = index">
+        <span class="sort-level-label">{{ i + 1 }}</span>
+        <select class="filter-select sort-level-field" [(ngModel)]="level.field" (ngModelChange)="onSearchOrSortChange()">
+          <option *ngFor="let opt of sortFieldOptions" [ngValue]="opt.value">{{ opt.label }}</option>
+        </select>
+        <select class="filter-select sort-level-dir" [(ngModel)]="level.asc" (ngModelChange)="onSearchOrSortChange()">
+          <option [ngValue]="true">Ascending</option>
+          <option [ngValue]="false">Descending</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="toolbar-row">
+      <button type="button" class="btn-secondary" (click)="resetFilters()">Reset search &amp; sort</button>
+      <div class="export-actions" *ngIf="displayedSpaces.length > 0">
+        <button type="button" class="btn-secondary btn-export" (click)="exportFilteredCsv()">CSV</button>
+        <button type="button" class="btn-secondary btn-export" (click)="exportFilteredXlsx()">Excel</button>
+      </div>
+      <span class="result-count">{{ displayedSpaces.length }} result(s)</span>
+    </div>
   </div>
 
-  <!-- LOADING -->
   <div class="loading" *ngIf="isLoading">Loading collaborative spaces...</div>
 
-  <!-- TABLE -->
   <div class="table-wrapper" *ngIf="!isLoading">
     <table class="resource-table">
       <thead>
         <tr>
-          <th class="sortable" (click)="setSort('name')">Name {{ sortIcon('name') }}</th>
-          <th class="sortable" (click)="setSort('building')">Building {{ sortIcon('building') }}</th>
+          <th>Name</th>
+          <th>Building</th>
           <th>Room</th>
-          <th class="sortable" (click)="setSort('capacity')">Capacity {{ sortIcon('capacity') }}</th>
-          <th class="sortable" (click)="setSort('spaceType')">Type {{ sortIcon('spaceType') }}</th>
-          <th class="sortable" (click)="setSort('status')">Status {{ sortIcon('status') }}</th>
+          <th>Capacity</th>
+          <th>Type</th>
+          <th>Status</th>
           <th *ngIf="isStaff">Actions</th>
         </tr>
       </thead>
@@ -130,7 +164,7 @@
         </tr>
 
         <tr *ngIf="displayedSpaces.length === 0">
-          <td colspan="7" class="empty">No collaborative spaces match your search.</td>
+          <td colspan="7" class="empty">No collaborative spaces match your criteria.</td>
         </tr>
       </tbody>
     </table>
@@ -157,7 +191,7 @@
     [visible]="deleteDialogOpen"
     (visibleChange)="onDeleteDialogClosed($event)"
     dialogTitle="Delete collaborative space?"
-    confirmBody="This action cannot be undone. The space will be removed from the system."
+    confirmBody="The space will be removed. You can undo for a few seconds afterward."
     confirmLabel="Delete"
     (confirmed)="confirmDelete()">
   </app-confirm-dialog>

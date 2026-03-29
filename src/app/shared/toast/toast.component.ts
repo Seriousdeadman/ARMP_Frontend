@@ -21,4 +21,8 @@ export class ToastComponent implements OnInit {
   dismiss(id: number): void {
     this.toastService.remove(id);
   }
+
+  runAction(toast: Toast): void {
+    toast.onAction?.();
+  }
 }

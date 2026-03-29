@@ -6,6 +6,7 @@ import { ToastService } from '../../../services/toast.service';
 import { ResourceExportService } from '../../../services/resource-export.service';
 import { User, UserRole } from '../../../models/user.models';
 import { Equipment, EquipmentType, ResourceStatus } from '../../../models/resource.models';
+import { containsIgnoreCase, multiSort } from '../../../utils/resource-list.utils';
 
 @Component({
   selector: 'app-equipment',
@@ -21,12 +22,28 @@ export class EquipmentComponent implements OnInit {
   showForm = false;
   isEditing = false;
   selectedId: number | null = null;
+  private snapshotBeforeEdit: Equipment | null = null;
 
-  searchQuery = '';
-  filterStatus = 'ALL';
-  filterType = 'ALL';
-  sortField: keyof Equipment = 'name';
-  sortAsc = true;
+  advSearch = {
+    nameContains: '',
+    brandContains: '',
+    modelContains: '',
+    status: 'ALL' as 'ALL' | ResourceStatus,
+    type: 'ALL' as 'ALL' | EquipmentType
+  };
+
+  sortLevel1: { field: keyof Equipment | ''; asc: boolean } = { field: 'name', asc: true };
+  sortLevel2: { field: keyof Equipment | ''; asc: boolean } = { field: '', asc: true };
+  sortLevel3: { field: keyof Equipment | ''; asc: boolean } = { field: '', asc: true };
+
+  readonly sortFieldOptions: { value: keyof Equipment | ''; label: string }[] = [
+    { value: '', label: '— None —' },
+    { value: 'name', label: 'Name' },
+    { value: 'brand', label: 'Brand' },
+    { value: 'model', label: 'Model' },
+    { value: 'equipmentType', label: 'Type' },
+    { value: 'status', label: 'Status' }
+  ];
 
   page = 1;
   pageSize = 5;
@@ -68,37 +85,24 @@ export class EquipmentComponent implements OnInit {
   get displayedEquipment(): Equipment[] {
     let result = [...this.equipmentList];
 
-    if (this.searchQuery.trim()) {
-      const q = this.searchQuery.toLowerCase();
-      result = result.filter(e =>
-        e.name.toLowerCase().includes(q) ||
-        e.brand.toLowerCase().includes(q) ||
-        e.model.toLowerCase().includes(q)
-      );
+    if (this.advSearch.nameContains.trim()) {
+      result = result.filter(e => containsIgnoreCase(e.name, this.advSearch.nameContains));
+    }
+    if (this.advSearch.brandContains.trim()) {
+      result = result.filter(e => containsIgnoreCase(e.brand, this.advSearch.brandContains));
+    }
+    if (this.advSearch.modelContains.trim()) {
+      result = result.filter(e => containsIgnoreCase(e.model, this.advSearch.modelContains));
     }
 
-    if (this.filterStatus !== 'ALL') {
-      result = result.filter(e => e.status === this.filterStatus);
+    if (this.advSearch.status !== 'ALL') {
+      result = result.filter(e => e.status === this.advSearch.status);
+    }
+    if (this.advSearch.type !== 'ALL') {
+      result = result.filter(e => e.equipmentType === this.advSearch.type);
     }
 
-    if (this.filterType !== 'ALL') {
-      result = result.filter(e => e.equipmentType === this.filterType);
-    }
-
-    result.sort((a, b) => {
-      const valA = a[this.sortField];
-      const valB = b[this.sortField];
-
-      if (valA === undefined || valB === undefined) return 0;
-
-      if (typeof valA === 'number' && typeof valB === 'number') {
-        return this.sortAsc ? valA - valB : valB - valA;
-      }
-
-      return this.sortAsc
-        ? String(valA).localeCompare(String(valB))
-        : String(valB).localeCompare(String(valA));
-    });
+    result = multiSort(result, [this.sortLevel1, this.sortLevel2, this.sortLevel3]);
 
     return result;
   }
@@ -148,26 +152,21 @@ export class EquipmentComponent implements OnInit {
     this.page = 1;
   }
 
-  setSort(field: keyof Equipment): void {
-    if (this.sortField === field) {
-      this.sortAsc = !this.sortAsc;
-    } else {
-      this.sortField = field;
-      this.sortAsc = true;
-    }
-  }
-
-  sortIcon(field: keyof Equipment): string {
-    if (this.sortField !== field) return '↕';
-    return this.sortAsc ? '↑' : '↓';
+  onSearchOrSortChange(): void {
+    this.page = 1;
   }
 
   resetFilters(): void {
-    this.searchQuery = '';
-    this.filterStatus = 'ALL';
-    this.filterType = 'ALL';
-    this.sortField = 'name';
-    this.sortAsc = true;
+    this.advSearch = {
+      nameContains: '',
+      brandContains: '',
+      modelContains: '',
+      status: 'ALL',
+      type: 'ALL'
+    };
+    this.sortLevel1 = { field: 'name', asc: true };
+    this.sortLevel2 = { field: '', asc: true };
+    this.sortLevel3 = { field: '', asc: true };
     this.page = 1;
   }
 
@@ -188,6 +187,7 @@ export class EquipmentComponent implements OnInit {
   openCreate(): void {
     this.isEditing = false;
     this.selectedId = null;
+    this.snapshotBeforeEdit = null;
     this.form = {
       name: '',
       brand: '',
@@ -202,6 +202,7 @@ export class EquipmentComponent implements OnInit {
   openEdit(equipment: Equipment): void {
     this.isEditing = true;
     this.selectedId = equipment.id;
+    this.snapshotBeforeEdit = { ...equipment };
     this.form = {
       name: equipment.name,
       brand: equipment.brand,
@@ -231,23 +232,58 @@ export class EquipmentComponent implements OnInit {
     return ok;
   }
 
+  private equipmentWriteBody() {
+    return {
+      name: this.form.name,
+      brand: this.form.brand,
+      model: this.form.model,
+      equipmentType: this.form.equipmentType,
+      status: this.form.status
+    };
+  }
+
   submit(): void {
     if (!this.validateForm()) {
       this.toastService.error('Please fix the highlighted fields.');
       return;
     }
 
-    if (this.isEditing && this.selectedId !== null) {
+    const body = this.equipmentWriteBody();
+    const restoreId = this.selectedId;
+    const previous = this.snapshotBeforeEdit;
+
+    if (this.isEditing && restoreId !== null) {
       this.http.put<Equipment>(
-        `${environment.apiUrl}/api/equipment/${this.selectedId}`,
-        this.form
+        `${environment.apiUrl}/api/equipment/${restoreId}`,
+        body
       ).subscribe({
-        next: (updated) => {
-          this.equipmentList = this.equipmentList.map(e =>
-            e.id === this.selectedId ? updated : e
-          );
+        next: () => {
+          this.loadEquipment();
           this.showForm = false;
-          this.toastService.success('Equipment updated.');
+          this.snapshotBeforeEdit = null;
+          if (previous) {
+            const id = restoreId;
+            const prevBody = {
+              name: previous.name,
+              brand: previous.brand,
+              model: previous.model,
+              equipmentType: previous.equipmentType,
+              status: previous.status
+            };
+            this.toastService.successWithAction(
+              'Equipment updated.',
+              'Undo',
+              () => {
+                this.http.put(`${environment.apiUrl}/api/equipment/${id}`, prevBody)
+                  .subscribe({
+                    next: () => this.loadEquipment(),
+                    error: () => this.toastService.error('Undo failed.')
+                  });
+              }
+            );
+          } else {
+            this.toastService.success('Equipment updated.');
+          }
         },
         error: (err) => {
           console.error('Failed to update equipment', err);
@@ -255,20 +291,33 @@ export class EquipmentComponent implements OnInit {
         }
       });
     } else {
-      this.http.post<Equipment>(
-        `${environment.apiUrl}/api/equipment`,
-        this.form
-      ).subscribe({
-        next: (created) => {
-          this.equipmentList.push(created);
-          this.showForm = false;
-          this.toastService.success('Equipment created.');
-        },
-        error: (err) => {
-          console.error('Failed to create equipment', err);
-          this.toastService.error('Failed to create equipment.');
-        }
-      });
+      this.http.post<Equipment>(`${environment.apiUrl}/api/equipment`, body)
+        .subscribe({
+          next: (created) => {
+            this.loadEquipment();
+            this.showForm = false;
+            const newId = created?.id;
+            if (newId != null) {
+              this.toastService.successWithAction(
+                'Equipment created.',
+                'Undo',
+                () => {
+                  this.http.delete(`${environment.apiUrl}/api/equipment/${newId}`)
+                    .subscribe({
+                      next: () => this.loadEquipment(),
+                      error: () => this.toastService.error('Undo failed.')
+                    });
+                }
+              );
+            } else {
+              this.toastService.success('Equipment created.');
+            }
+          },
+          error: (err) => {
+            console.error('Failed to create equipment', err);
+            this.toastService.error('Failed to create equipment.');
+          }
+        });
     }
   }
 
@@ -285,10 +334,33 @@ export class EquipmentComponent implements OnInit {
   confirmDelete(): void {
     const id = this.pendingDeleteId;
     if (id == null) return;
+    const entity = this.equipmentList.find(e => e.id === id);
     this.pendingDeleteId = null;
     this.http.delete(`${environment.apiUrl}/api/equipment/${id}`).subscribe({
       next: () => {
-        this.equipmentList = this.equipmentList.filter(e => e.id !== id);
+        this.loadEquipment();
+        if (entity) {
+          const payload = {
+            name: entity.name,
+            brand: entity.brand,
+            model: entity.model,
+            equipmentType: entity.equipmentType,
+            status: entity.status
+          };
+          this.toastService.successWithAction(
+            'Equipment deleted.',
+            'Undo',
+            () => {
+              this.http.post(`${environment.apiUrl}/api/equipment`, payload)
+                .subscribe({
+                  next: () => this.loadEquipment(),
+                  error: () => this.toastService.error('Undo failed.')
+                });
+            }
+          );
+        } else {
+          this.toastService.success('Equipment deleted.');
+        }
       },
       error: (err) => {
         console.error('Failed to delete equipment', err);
@@ -299,6 +371,7 @@ export class EquipmentComponent implements OnInit {
 
   cancel(): void {
     this.showForm = false;
+    this.snapshotBeforeEdit = null;
   }
 
   exportFilteredCsv(): void {
