@@ -2,8 +2,10 @@ import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { finalize } from 'rxjs/operators';
-import { Department, Employee, EmployeeRequest, Grade } from '../../../models/hr.models';
+import { Department, Employee, EmployeeRequest, Grade, PayrollResult } from '../../../models/hr.models';
 import { HrService } from '../../../services/hr.service';
+import { AuthService } from '../../../services/auth.service';
+import { UserRole } from '../../../models/user.models';
 import { SlideOverPanelComponent } from '../../../shared/slide-over-panel/slide-over-panel.component';
 
 @Component({
@@ -15,6 +17,7 @@ import { SlideOverPanelComponent } from '../../../shared/slide-over-panel/slide-
 })
 export class HrAdminEmployeesComponent implements OnInit {
   private readonly hrService = inject(HrService);
+  private readonly authService = inject(AuthService);
 
   employees: Employee[] = [];
   grades: Grade[] = [];
@@ -23,12 +26,18 @@ export class HrAdminEmployeesComponent implements OnInit {
   selectedGradeFilter = 'ALL';
   selectedDepartmentFilter = 'ALL';
   selectedId = '';
-  form: EmployeeRequest = { name: '', email: '', hireDate: '', leaveBalance: 21, gradeId: '', departmentId: '' };
+  form: EmployeeRequest = { name: '', email: '', hireDate: '', leaveBalance: 21, gradeId: '', departmentId: '', status: 'ACTIVE' };
   salaryEmployeeId = '';
-  salaryValue: number | null = null;
+  salaryResult: PayrollResult | null = null;
   error: string | null = null;
   isLoading = false;
   panelOpen = false;
+
+  readonly UserRole = UserRole;
+
+  get currentRole(): UserRole | undefined {
+    return this.authService.getCurrentUser()?.role;
+  }
 
   ngOnInit(): void {
     this.reload();
@@ -41,6 +50,11 @@ export class HrAdminEmployeesComponent implements OnInit {
     this.hrService.listEmployees()
       .pipe(finalize(() => { this.isLoading = false; }))
       .subscribe({ next: v => this.employees = v });
+  }
+
+  /** Backend may omit status; default matches typical active employees. */
+  statusDotClass(status: Employee['status'] | undefined | null): string {
+    return 'status-dot--' + (status ?? 'ACTIVE').toLowerCase();
   }
 
   initials(name: string): string {
@@ -56,7 +70,9 @@ export class HrAdminEmployeesComponent implements OnInit {
 
   openNew(): void {
     this.selectedId = '';
-    this.form = { name: '', email: '', hireDate: '', leaveBalance: 21, gradeId: '', departmentId: '' };
+    const user = this.authService.getCurrentUser();
+    const defaultStatus = user?.role === UserRole.LOGISTICS_STAFF ? 'PENDING_VALIDATION' : 'ACTIVE';
+    this.form = { name: '', email: '', hireDate: '', leaveBalance: 21, gradeId: '', departmentId: '', status: defaultStatus };
     this.error = null;
     this.panelOpen = true;
   }
@@ -69,7 +85,8 @@ export class HrAdminEmployeesComponent implements OnInit {
       hireDate: e.hireDate,
       leaveBalance: e.leaveBalance,
       gradeId: e.grade.id,
-      departmentId: e.department.id
+      departmentId: e.department.id,
+      status: e.status
     };
     this.error = null;
     this.panelOpen = true;
@@ -84,6 +101,11 @@ export class HrAdminEmployeesComponent implements OnInit {
       return;
     }
     this.error = null;
+    // Ensure LOGISTICS_STAFF always creates as PENDING_VALIDATION
+    const user = this.authService.getCurrentUser();
+    if (user?.role === UserRole.LOGISTICS_STAFF) {
+      this.form.status = 'PENDING_VALIDATION';
+    }
     this.hrService.createEmployee(this.form).subscribe({
       next: () => {
         this.reload();
@@ -127,6 +149,21 @@ export class HrAdminEmployeesComponent implements OnInit {
     });
   }
 
+  approve(): void {
+    if (!this.selectedId) {
+      this.error = 'Select employee first';
+      return;
+    }
+    this.error = null;
+    this.hrService.activateEmployee(this.selectedId).subscribe({
+      next: () => {
+        this.reload();
+        this.closePanel();
+      },
+      error: e => this.error = e?.error?.message ?? 'Approve failed'
+    });
+  }
+
   calculateSalary(): void {
     if (!this.salaryEmployeeId) {
       this.error = 'Select employee for salary';
@@ -134,7 +171,7 @@ export class HrAdminEmployeesComponent implements OnInit {
     }
     this.error = null;
     this.hrService.getEmployeeMonthlyPay(this.salaryEmployeeId).subscribe({
-      next: v => this.salaryValue = v,
+      next: v => this.salaryResult = v,
       error: e => this.error = e?.error?.message ?? 'Calculation failed'
     });
   }
@@ -172,10 +209,6 @@ export class HrAdminEmployeesComponent implements OnInit {
     }
     if (!this.form.departmentId) {
       this.error = 'Department is required.';
-      return false;
-    }
-    if ((this.form.leaveBalance ?? 0) < 0) {
-      this.error = 'Leave balance cannot be negative.';
       return false;
     }
     return true;

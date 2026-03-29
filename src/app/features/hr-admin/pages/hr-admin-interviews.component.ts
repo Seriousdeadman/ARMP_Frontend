@@ -126,14 +126,14 @@ export class HrAdminInterviewsComponent implements OnInit, OnDestroy {
   }
 
   update(): void {
-    if (!this.selectedId) { this.error = 'Select interview first'; return; }
+    if (!this.selectedId) { this.error = 'Select Interviewerfirst'; return; }
     if (!this.validateForm()) { return; }
     this.error = null;
     this.hrService.updateInterview(this.selectedId, this.form).subscribe({ next: () => this.reload(), error: e => this.error = e?.error?.message ?? 'Update failed' });
   }
 
   remove(): void {
-    if (!this.selectedId) { this.error = 'Select interview first'; return; }
+    if (!this.selectedId) { this.error = 'Select Interviewerfirst'; return; }
     this.error = null;
     this.hrService.deleteInterview(this.selectedId).subscribe({ next: () => { this.selectedId = ''; this.reload(); }, error: e => this.error = e?.error?.message ?? 'Delete failed' });
   }

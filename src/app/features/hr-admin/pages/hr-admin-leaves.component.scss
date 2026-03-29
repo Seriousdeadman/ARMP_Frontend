@@ -1,3 +1,7 @@
+.lv-slide-body {
+  min-width: 280px;
+}
+
 .lv-head h1 {
   margin: 0 0 16px;
   font-size: 22px;
@@ -7,17 +11,8 @@
   margin-bottom: 16px;
 }
 
-.lv-split {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 340px;
-  gap: 16px;
-  align-items: start;
-}
-
-@media (max-width: 900px) {
-  .lv-split {
-    grid-template-columns: 1fr;
-  }
+.lv-list {
+  position: relative;
 }
 
 .lv-ul {
@@ -70,6 +65,116 @@
   font-size: 14px;
 }
 
+/* ── Badges ─────────────────────────────────────────── */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.2rem 0.6rem;
+  border-radius: 9999px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  width: fit-content;
+
+  &--active {
+    background: rgba(34, 197, 94, 0.12);
+    color: #16a34a;
+    border: 1px solid rgba(34, 197, 94, 0.25);
+  }
+
+  &--pending {
+    background: rgba(245, 158, 11, 0.12);
+    color: #d97706;
+    border: 1px solid rgba(245, 158, 11, 0.25);
+  }
+
+  &--rejected {
+    background: rgba(239, 68, 68, 0.12);
+    color: #dc2626;
+    border: 1px solid rgba(239, 68, 68, 0.25);
+  }
+}
+
+/* ── Slide-over panel ──────────────────────────────────── */
+.slideover-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(2px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+  z-index: 40;
+
+  &.is-open {
+    opacity: 1;
+    pointer-events: all;
+  }
+}
+
+.slideover {
+  position: fixed;
+  top: 0;
+  right: 0;
+  height: 100%;
+  width: min(420px, 100vw);
+  background: #fff;
+  border-left: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: -8px 0 40px rgba(0, 0, 0, 0.1);
+  transform: translateX(100%);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+
+  &.is-open {
+    transform: translateX(0);
+  }
+
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+    position: sticky;
+    top: 0;
+    background: #fff;
+    z-index: 1;
+  }
+
+  &__title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #1a1a18;
+    margin: 0;
+  }
+
+  &__close {
+    background: none;
+    border: none;
+    color: #64748b;
+    font-size: 1.1rem;
+    cursor: pointer;
+    padding: 0.25rem;
+    line-height: 1;
+    transition: color 0.15s;
+
+    &:hover { color: #1a1a18; }
+  }
+
+  &__body {
+    padding: 1.5rem;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+  }
+}
+
 .ctx-dl {
   margin: 0;
 }
@@ -97,8 +202,45 @@
 
 .ctx-actions {
   display: flex;
+  flex-direction: column;
   gap: 10px;
   margin-top: 16px;
+}
+
+/* ── Buttons ─────────────────────────────────────────── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.55rem 1.1rem;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  border: 1px solid transparent;
+
+  &--primary {
+    background: #1a1a18;
+    color: #fff;
+    &:hover:not(:disabled) { transform: translateY(-1px); }
+  }
+
+  &--outline {
+    background: transparent;
+    border-color: #d1d5db;
+    color: #374151;
+    &:hover { background: #f9fafb; }
+  }
+
+  &--full { width: 100%; }
+}
+
+.danger {
+  border-color: rgba(239, 68, 68, 0.4);
+  color: #dc2626;
+  &:hover { background: rgba(239, 68, 68, 0.05); }
 }
 
 .muted {

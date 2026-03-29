@@ -16,38 +16,13 @@ export interface HrMenuGroup {
 export interface HrMenuBootstrap {
   employeeFound: boolean;
   candidateFound: boolean;
+  /** True when leave-summary returned 403 (employee record exists but pending activation). */
+  employeePendingValidation?: boolean;
 }
 
-const hrOpsRecruitment: HrMenuGroup = {
-  id: 'recruitment',
-  label: 'Recruitment',
-  links: [
-    { label: 'Talent Board', route: '/app/hr/admin/talent-board' },
-    { label: 'Interview schedule', route: '/app/hr/admin/interviews' }
-  ]
-};
-
-const hrOpsPeople: HrMenuGroup = {
-  id: 'people',
-  label: 'People',
-  links: [
-    { label: 'Employee directory', route: '/app/hr/admin/employees' },
-    { label: 'Leave inbox', route: '/app/hr/admin/leaves' }
-  ]
-};
-
-const superAdminGovernance: HrMenuGroup = {
-  id: 'governance',
-  label: 'Governance',
-  links: [
-    { label: 'Grades & salary', route: '/app/hr/admin/grades' },
-    { label: 'Departments', route: '/app/hr/admin/departments' }
-  ]
-};
-
-const myHrLeaveLinks: HrMenuLink[] = [
-  { label: 'Leave & absences', route: '/app/hr' },
-  { label: 'My profile', route: '/app/profile' }
+const myProfileLeaveLinks: HrMenuLink[] = [
+  { label: 'My Leave', route: '/app/hr' },
+  { label: 'My Profile', route: '/app/profile' }
 ];
 
 export function filterHrMenu(
@@ -66,26 +41,26 @@ export function filterHrMenu(
       groups.push({
         id: 'selfService',
         label: 'My HR & Leave',
-        links: [...myHrLeaveLinks]
+        links: [...myProfileLeaveLinks]
       });
     }
     groups.push({
       id: 'recruitment',
       label: 'My Career',
       links: [
-        { label: 'Career status', route: '/app/hr' },
-        { label: 'Apply & CV', route: '/app/careers' }
+        { label: 'My Application', route: '/app/hr' },
+        { label: 'CV Upload', route: '/app/careers' }
       ]
     });
     return groups;
   }
 
-  if (role === UserRole.TEACHER) {
+  if (role === UserRole.TEACHER || role === UserRole.REGULAR_STAFF) {
     return [
       {
         id: 'selfService',
-        label: 'My HR & Leave',
-        links: [...myHrLeaveLinks]
+        label: 'HR',
+        links: [...myProfileLeaveLinks]
       }
     ];
   }
@@ -95,11 +70,26 @@ export function filterHrMenu(
     if (employeeFound) {
       groups.push({
         id: 'selfService',
-        label: 'My HR & Leave',
-        links: [...myHrLeaveLinks]
+        label: 'My HR',
+        links: [...myProfileLeaveLinks]
       });
     }
-    groups.push(hrOpsRecruitment, hrOpsPeople);
+    groups.push({
+      id: 'recruitment',
+      label: 'Recruitment',
+      links: [
+        { label: 'Recruitment Board', route: '/app/hr/admin/talent-board' },
+        { label: 'Interview schedule', route: '/app/hr/admin/interviews' }
+      ]
+    });
+    groups.push({
+      id: 'people',
+      label: 'People',
+      links: [
+        { label: 'Employee Drafts', route: '/app/hr/admin/employees' },
+        { label: 'Leave Inbox', route: '/app/hr/admin/leaves' }
+      ]
+    });
     return groups;
   }
 
@@ -108,11 +98,36 @@ export function filterHrMenu(
     if (employeeFound) {
       groups.push({
         id: 'selfService',
-        label: 'My HR & Leave',
-        links: [...myHrLeaveLinks]
+        label: 'My HR',
+        links: [...myProfileLeaveLinks]
       });
     }
-    groups.push(hrOpsRecruitment, hrOpsPeople, superAdminGovernance);
+    groups.push({
+      id: 'recruitment',
+      label: 'Recruitment',
+      links: [
+        { label: 'Recruitment Board', route: '/app/hr/admin/talent-board' },
+        { label: 'Interview schedule', route: '/app/hr/admin/interviews' }
+      ]
+    });
+    groups.push({
+      id: 'people',
+      label: 'People',
+      links: [
+        { label: 'Employee Drafts', route: '/app/hr/admin/employees' },
+        { label: 'Leave Inbox', route: '/app/hr/admin/leaves' }
+      ]
+    });
+    groups.push({
+      id: 'governance',
+      label: 'Governance',
+      links: [
+        { label: 'Onboarding Approvals', route: '/app/hr/admin/onboarding' },
+        { label: 'Payroll', route: '/app/hr/admin/payroll' },
+        { label: 'Grade Management', route: '/app/hr/admin/grades' },
+        { label: 'Departments', route: '/app/hr/admin/departments' }
+      ]
+    });
     return groups;
   }
 

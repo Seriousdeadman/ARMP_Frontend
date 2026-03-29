@@ -9,7 +9,7 @@
 
   <section class="panel">
     <h2 class="section-title">Recruitment</h2>
-    <p class="section-hint">Latest interview score per candidate (most recent dated interview with a score).</p>
+    <p class="section-hint">Latest Interviewerscore per candidate (most recent dated Interviewerwith a score).</p>
     <div class="loading" *ngIf="loadingCandidates">Loading candidates…</div>
     <div class="table-wrap" *ngIf="!loadingCandidates">
       <table class="data-table">
@@ -430,8 +430,9 @@
     <div class="crud-actions">
       <button class="btn btn-primary" (click)="calculateSalary()">Calculate monthly pay</button>
     </div>
-    <p class="muted" *ngIf="salaryAmount !== null">
-      {{ selectedSalaryEmployeeName || 'Employee' }} monthly pay: <strong>{{ salaryAmount }}</strong>
+    <p class="muted" *ngIf="salaryResult !== null">
+      {{ selectedSalaryEmployeeName || 'Employee' }} — net: <strong>{{ salaryResult.calculatedSalary }}</strong>
+      (base {{ salaryResult.baseSalary }}, deduction {{ salaryResult.deduction }})
     </p>
   </section>
 </div>

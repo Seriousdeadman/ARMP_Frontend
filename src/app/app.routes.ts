@@ -58,6 +58,41 @@ export const routes: Routes = [
             .then(m => m.ActivityComponent)
       },
       {
+        path: 'parking',
+        data: { title: 'Parking' },
+        loadComponent: () =>
+          import('./features/campus-module-placeholder/campus-module-placeholder.component')
+            .then(m => m.CampusModulePlaceholderComponent)
+      },
+      {
+        path: 'dining',
+        data: { title: 'Dining hall' },
+        loadComponent: () =>
+          import('./features/campus-module-placeholder/campus-module-placeholder.component')
+            .then(m => m.CampusModulePlaceholderComponent)
+      },
+      {
+        path: 'dormitory',
+        data: { title: 'Dormitory' },
+        loadComponent: () =>
+          import('./features/campus-module-placeholder/campus-module-placeholder.component')
+            .then(m => m.CampusModulePlaceholderComponent)
+      },
+      {
+        path: 'classes',
+        data: { title: 'Classes' },
+        loadComponent: () =>
+          import('./features/campus-module-placeholder/campus-module-placeholder.component')
+            .then(m => m.CampusModulePlaceholderComponent)
+      },
+      {
+        path: 'clubs',
+        data: { title: 'Clubs & life' },
+        loadComponent: () =>
+          import('./features/campus-module-placeholder/campus-module-placeholder.component')
+            .then(m => m.CampusModulePlaceholderComponent)
+      },
+      {
         path: 'admin',
         canActivate: [roleGuard],
         data: { role: UserRole.SUPER_ADMIN },
@@ -76,6 +111,7 @@ export const routes: Routes = [
               roles: [
                 UserRole.STUDENT,
                 UserRole.TEACHER,
+                UserRole.REGULAR_STAFF,
                 UserRole.LOGISTICS_STAFF,
                 UserRole.SUPER_ADMIN
               ]
@@ -126,6 +162,22 @@ export const routes: Routes = [
                 loadComponent: () =>
                   import('./features/hr-admin/pages/hr-admin-leaves.component')
                     .then(m => m.HrAdminLeavesComponent)
+              },
+              {
+                path: 'onboarding',
+                canActivate: [roleGuard],
+                data: { role: UserRole.SUPER_ADMIN },
+                loadComponent: () =>
+                  import('./features/hr-admin/pages/hr-admin-onboarding.component')
+                    .then(m => m.HrAdminOnboardingComponent)
+              },
+              {
+                path: 'payroll',
+                canActivate: [roleGuard],
+                data: { role: UserRole.SUPER_ADMIN },
+                loadComponent: () =>
+                  import('./features/hr-admin/pages/hr-admin-payroll.component')
+                    .then(m => m.HrAdminPayrollComponent)
               },
               {
                 path: 'grades',

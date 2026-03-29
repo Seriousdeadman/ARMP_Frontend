@@ -102,3 +102,34 @@ textarea {
   gap: 8px;
   align-self: end;
 }
+
+.badge--status-active {
+  background: #e8f5e9;
+  color: #1b5e20;
+}
+
+.badge--status-pending {
+  background: #fff8e1;
+  color: #e65100;
+}
+
+.badge--status-approved {
+  background: #e8f5e9;
+  color: #1b5e20;
+}
+
+.badge--status-rejected {
+  background: #ffebee;
+  color: #b71c1c;
+}
+
+.badge--status-active,
+.badge--status-pending,
+.badge--status-approved,
+.badge--status-rejected {
+  border-radius: 999px;
+  padding: 2px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  display: inline-block;
+}

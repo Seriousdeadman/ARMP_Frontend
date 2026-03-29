@@ -153,7 +153,7 @@
     <ng-container *ngIf="!leaveLoading && !leaveError && leaveSummary">
       <div *ngIf="!leaveSummary.employeeFound" class="empty-card">
         <p>No employee record is linked to your email.</p>
-        <p class="muted small" *ngIf="currentRole === UserRole.TEACHER">Contact HR to connect your staff profile for leave requests.</p>
+        <p class="muted small" *ngIf="currentRole === UserRole.TEACHER || currentRole === UserRole.REGULAR_STAFF">Contact HR to connect your staff profile for leave requests.</p>
       </div>
 
       <ng-container *ngIf="leaveSummary.employeeFound">
@@ -217,12 +217,57 @@
             <tbody>
               <tr *ngFor="let row of leaveHistory">
                 <td>{{ row.startDate }} → {{ row.endDate }}</td>
-                <td><span class="badge-status">{{ leaveStatusLabel(row.status) }}</span></td>
+                <td>
+                  <span
+                    class="badge"
+                    [ngClass]="{
+                      'badge--status-approved': row.status === 'APPROVED',
+                      'badge--status-pending': row.status === 'PENDING',
+                      'badge--status-rejected': row.status === 'REJECTED'
+                    }">{{ leaveStatusLabel(row.status) }}</span>
+                </td>
                 <td>{{ row.requestedDays ?? '—' }}</td>
               </tr>
             </tbody>
           </table>
           <p *ngIf="!historyLoading && !leaveHistory.length" class="muted small">No past requests yet.</p>
+        </div>
+
+        <div class="payslip-block">
+          <h3 class="history-title">My Payslip</h3>
+          <div *ngIf="payrollLoading" class="muted small">Loading payroll details…</div>
+          <p *ngIf="payrollError" class="feedback err">{{ payrollError }}</p>
+          
+          <div class="payslip-card" *ngIf="!payrollLoading && payrollResult">
+            <div class="payslip-header">
+              <span class="payslip-period">Current Month Breakdown</span>
+              <span class="payslip-grade">{{ payrollResult.gradeName }}</span>
+            </div>
+            
+            <dl class="payslip-dl">
+              <div class="payslip-item">
+                <dt>Base Salary</dt>
+                <dd>{{ payrollResult.baseSalary | number:'1.2-2' }} DZD</dd>
+              </div>
+              <div class="payslip-item">
+                <dt>Daily Rate (Base/22)</dt>
+                <dd>{{ payrollResult.dailyRate | number:'1.2-2' }} DZD</dd>
+              </div>
+              <div class="payslip-item payslip-item--deduction" *ngIf="(payrollResult.deduction ?? 0) > 0">
+                <dt>Leave Balance Deduction</dt>
+                <dd>-{{ payrollResult.deduction | number:'1.2-2' }} DZD</dd>
+              </div>
+            </dl>
+            
+            <div class="payslip-footer">
+              <span class="total-label">Estimated Net Salary</span>
+              <span class="total-value">{{ payrollResult.calculatedSalary | number:'1.2-2' }} DZD</span>
+            </div>
+            
+            <p class="payslip-note" *ngIf="(payrollResult.deduction ?? 0) > 0">
+              * A deduction was applied because your leave balance ({{ payrollResult.leaveBalance }} days) is negative.
+            </p>
+          </div>
         </div>
       </ng-container>
     </ng-container>

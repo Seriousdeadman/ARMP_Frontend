@@ -28,56 +28,58 @@
         <option value="EXCEPTIONAL">EXCEPTIONAL</option>
       </select>
     </label>
-    <label class="full">
-      Your password (required for approve / reject)
-      <input type="password" [(ngModel)]="adminPassword" placeholder="Current account password" autocomplete="current-password" />
-    </label>
   </div>
 </div>
 
-<div class="lv-split">
-  <div class="lv-list panel">
-    <h2>Pending</h2>
-    <ul class="lv-ul" *ngIf="filteredPendingLeaves.length > 0; else noPending">
-      <li *ngFor="let l of filteredPendingLeaves">
-        <button
-          type="button"
-          class="lv-row"
-          [class.active]="selectedLeave?.id === l.id"
-          (click)="selectLeave(l)">
-          <span class="lv-row-title">{{ l.employee.name }}</span>
-          <span class="lv-row-dates">{{ l.startDate }} – {{ l.endDate }}</span>
-          <span class="lv-row-type">{{ l.type }}</span>
-        </button>
-      </li>
-    </ul>
-    <ng-template #noPending>
-      <p class="muted">No pending requests.</p>
-    </ng-template>
+<div class="lv-list panel">
+  <h2>Pending</h2>
+  <ul class="lv-ul" *ngIf="filteredPendingLeaves.length > 0; else noPending">
+    <li *ngFor="let l of filteredPendingLeaves">
+      <button
+        type="button"
+        class="lv-row"
+        [class.active]="selectedLeave?.id === l.id"
+        (click)="selectLeave(l)">
+        <span class="lv-row-title">{{ l.employee.name }}</span>
+        <span class="lv-row-dates">{{ l.startDate }} – {{ l.endDate }}</span>
+        <span class="lv-row-type">{{ l.type }}</span>
+        <span class="badge badge--status-pending">Pending</span>
+      </button>
+    </li>
+  </ul>
+  <ng-template #noPending>
+    <p class="muted">No pending requests.</p>
+  </ng-template>
 
-    <h2 class="lv-hist-title">History</h2>
-    <ul class="lv-ul" *ngIf="filteredHistoricalLeaves.length > 0; else noHist">
-      <li *ngFor="let l of filteredHistoricalLeaves">
-        <button
-          type="button"
-          class="lv-row lv-row-hist"
-          [class.active]="selectedLeave?.id === l.id"
-          (click)="selectLeave(l)">
-          <span class="lv-row-title">{{ l.employee.name }}</span>
-          <span class="lv-row-meta">{{ l.status }}</span>
-        </button>
-      </li>
-    </ul>
-    <ng-template #noHist>
-      <p class="muted">No history.</p>
-    </ng-template>
-  </div>
+  <h2 class="lv-hist-title">History</h2>
+  <ul class="lv-ul" *ngIf="filteredHistoricalLeaves.length > 0; else noHist">
+    <li *ngFor="let l of filteredHistoricalLeaves">
+      <button
+        type="button"
+        class="lv-row lv-row-hist"
+        [class.active]="selectedLeave?.id === l.id"
+        (click)="selectLeave(l)">
+        <span class="lv-row-title">{{ l.employee.name }}</span>
+        <span class="badge" [ngClass]="{
+          'badge--status-approved': l.status === 'APPROVED',
+          'badge--status-pending': l.status === 'PENDING',
+          'badge--status-rejected': l.status === 'REJECTED'
+        }">{{ l.status }}</span>
+      </button>
+    </li>
+  </ul>
+  <ng-template #noHist>
+    <p class="muted">No history.</p>
+  </ng-template>
+</div>
 
-  <aside class="lv-context panel" aria-live="polite">
-    <h2>Context</h2>
-    <div *ngIf="!selectedLeave" class="muted">Select a request to see leave balance and actions.</div>
-    <div *ngIf="selectedLeave && contextLoading">Loading employee…</div>
-    <ng-container *ngIf="selectedLeave && !contextLoading">
+<app-slide-over-panel
+  [open]="!!selectedLeave"
+  title="Leave context"
+  (closed)="selectedLeave = null">
+  <div *ngIf="selectedLeave" class="lv-slide-body">
+    <div *ngIf="contextLoading">Loading employee…</div>
+    <ng-container *ngIf="!contextLoading">
       <dl class="ctx-dl">
         <div>
           <dt>Employee</dt>
@@ -97,9 +99,9 @@
         </div>
       </dl>
       <div class="ctx-actions" *ngIf="selectedLeave.status === 'PENDING'">
-        <button type="button" (click)="approve(selectedLeave.id)">Approve</button>
-        <button type="button" class="danger" (click)="reject(selectedLeave.id)">Reject</button>
+        <button type="button" class="btn btn--primary btn--full" (click)="approve(selectedLeave.id)">Approve</button>
+        <button type="button" class="btn btn--outline btn--full danger" (click)="reject(selectedLeave.id)">Reject</button>
       </div>
     </ng-container>
-  </aside>
-</div>
+  </div>
+</app-slide-over-panel>

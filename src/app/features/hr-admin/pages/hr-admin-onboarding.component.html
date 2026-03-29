@@ -1,0 +1,86 @@
+<div class="page-container">
+  <header class="page-header">
+    <div class="page-header__icon">🏛️</div>
+    <div>
+      <h1 class="page-header__title">Onboarding Approvals</h1>
+      <p class="page-header__subtitle">Review and activate employee drafts submitted by HR Staff.</p>
+    </div>
+  </header>
+
+  <!-- Alerts -->
+  <div class="alert alert--error" *ngIf="error" role="alert">{{ error }}</div>
+  <div class="alert alert--success" *ngIf="success" role="alert">{{ success }}</div>
+
+  <!-- Loading -->
+  <div class="loading-state" *ngIf="loading">
+    <div class="spinner"></div>
+    <p>Loading pending employees…</p>
+  </div>
+
+  <!-- Empty state -->
+  <div class="empty-state" *ngIf="!loading && pendingEmployees.length === 0">
+    <div class="empty-state__icon">✅</div>
+    <h3>No pending approvals</h3>
+    <p>All employee drafts have been reviewed.</p>
+  </div>
+
+  <!-- Grid (aligned with employee directory pattern) -->
+  <div class="onb-toolbar" *ngIf="!loading && pendingEmployees.length > 0">
+    <span class="table-meta__count">{{ pendingEmployees.length }} pending</span>
+  </div>
+  <div class="onb-grid" *ngIf="!loading && pendingEmployees.length > 0">
+    <button
+      type="button"
+      *ngFor="let emp of pendingEmployees"
+      class="onb-card"
+      (click)="openPanel(emp)">
+      <div class="onb-avatar" aria-hidden="true">{{ initials(emp.name) }}</div>
+      <span class="onb-badge" [class]="statusBadgeClass(emp.status)">{{ statusLabel(emp.status) }}</span>
+      <div class="onb-name">{{ emp.name }}</div>
+      <div class="onb-meta">{{ emp.department?.name ?? '—' }}</div>
+      <div class="onb-sub">{{ emp.grade?.name ?? '—' }} · {{ emp.leaveBalance }} days leave</div>
+      <span class="onb-cta">Review →</span>
+    </button>
+  </div>
+</div>
+
+<app-slide-over-panel
+  [open]="panelOpen"
+  title="Employee Draft Review"
+  (closed)="closePanel()">
+  <div *ngIf="selectedEmployee" class="slideover__body">
+    <div class="detail-section">
+      <div class="detail-avatar">{{ selectedEmployee.name.charAt(0) }}</div>
+      <div class="detail-name">{{ selectedEmployee.name }}</div>
+      <div class="detail-email">{{ selectedEmployee.email }}</div>
+    </div>
+
+    <dl class="detail-grid">
+      <dt>Department</dt>
+      <dd>{{ selectedEmployee.department?.name ?? '—' }}</dd>
+      <dt>Grade</dt>
+      <dd>{{ selectedEmployee.grade?.name ?? '—' }}</dd>
+      <dt>Base Salary</dt>
+      <dd>{{ selectedEmployee.grade?.baseSalary | number:'1.2-2' }}</dd>
+      <dt>Leave Balance</dt>
+      <dd>{{ selectedEmployee.leaveBalance }} days</dd>
+      <dt>Status</dt>
+      <dd><span [class]="statusBadgeClass(selectedEmployee.status)">{{ statusLabel(selectedEmployee.status) }}</span></dd>
+    </dl>
+
+    <div class="slideover__info-banner">
+      Activating this employee will allow them to log in and access the HR portal.
+    </div>
+
+    <div class="slideover__actions">
+      <button
+        class="btn btn--primary btn--full"
+        [disabled]="processingId === selectedEmployee.id"
+        (click)="activate(selectedEmployee.id)">
+        <span *ngIf="processingId !== selectedEmployee.id">✓ Activate Employee</span>
+        <span *ngIf="processingId === selectedEmployee.id">Activating…</span>
+      </button>
+      <button class="btn btn--ghost btn--full" (click)="closePanel()">Cancel</button>
+    </div>
+  </div>
+</app-slide-over-panel>

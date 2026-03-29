@@ -38,6 +38,101 @@
   line-height: 1.45;
 }
 
+@keyframes pulse-anim {
+  0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.4); }
+  70% { transform: scale(1.02); box-shadow: 0 0 0 15px rgba(76, 175, 80, 0); }
+  100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(76, 175, 80, 0); }
+}
+
+.payslip-block {
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px dashed #e2e8f0;
+}
+
+.payslip-card {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  overflow: hidden;
+  margin-top: 0.75rem;
+}
+
+.payslip-header {
+  background: #f1f5f9;
+  padding: 0.75rem 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.payslip-period {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #64748b;
+  letter-spacing: 0.05em;
+}
+
+.payslip-grade {
+  font-size: 0.75rem;
+  color: #334155;
+  font-weight: 500;
+  background: #fff;
+  padding: 2px 8px;
+  border-radius: 4px;
+  border: 1px solid #e2e8f0;
+}
+
+.payslip-dl {
+  padding: 1rem;
+  margin: 0;
+}
+
+.payslip-item {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+  font-size: 0.875rem;
+
+  dt { color: #64748b; }
+  dd { color: #0f172a; font-weight: 500; font-variant-numeric: tabular-nums; }
+
+  &--deduction dd {
+    color: #ef4444;
+  }
+}
+
+.payslip-footer {
+  background: #f1f5f9;
+  padding: 0.875rem 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 2px solid #e2e8f0;
+}
+
+.total-label {
+  font-weight: 600;
+  color: #0f172a;
+  font-size: 0.95rem;
+}
+
+.total-value {
+  font-weight: 800;
+  color: #10b981;
+  font-size: 1.1rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.payslip-note {
+  padding: 0.5rem 1rem 0.75rem;
+  font-size: 0.7rem;
+  color: #ef4444;
+  font-style: italic;
+}
+
 .panel {
   background: #fff;
   border-radius: 12px;
@@ -425,4 +520,31 @@
 
 .balance-name {
   margin-bottom: 20px;
+}
+
+.badge--status-active,
+.badge--status-approved {
+  background: #e8f5e9;
+  color: #1b5e20;
+}
+
+.badge--status-pending {
+  background: #fff8e1;
+  color: #e65100;
+}
+
+.badge--status-rejected {
+  background: #ffebee;
+  color: #b71c1c;
+}
+
+.badge--status-active,
+.badge--status-pending,
+.badge--status-approved,
+.badge--status-rejected {
+  border-radius: 999px;
+  padding: 2px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  display: inline-block;
 }

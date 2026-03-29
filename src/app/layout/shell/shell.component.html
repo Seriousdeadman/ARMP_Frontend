@@ -7,7 +7,7 @@
 
     <div class="sidebar-section-label">Modules</div>
     <nav>
-      <ng-container *ngFor="let item of getVisibleNavItems()">
+      <ng-container *ngFor="let item of visibleNavItems">
         <a [routerLink]="item.route"
            routerLinkActive="active"
            class="nav-item">

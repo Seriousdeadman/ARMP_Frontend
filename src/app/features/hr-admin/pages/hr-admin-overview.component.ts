@@ -23,8 +23,6 @@ export class HrAdminOverviewComponent implements OnInit {
   pendingLeaveSearchQuery = '';
   employeeSearchQuery = '';
   error: string | null = null;
-  adminPassword = '';
-
   ngOnInit(): void {
     this.reload();
   }
@@ -49,18 +47,12 @@ export class HrAdminOverviewComponent implements OnInit {
   }
 
   approve(id: string): void {
-    const password = this.resolveAdminPassword();
-    if (!password) {
-      this.error = 'Admin password is required to approve or reject leave requests.';
-      return;
-    }
     this.error = null;
-    this.adminPassword = password;
-    this.hrService.approveLeave(id, password).subscribe({
+    this.hrService.approveLeave(id).subscribe({
       next: () => this.reload(),
       error: err => {
         if (err?.status === 403) {
-          this.error = 'Invalid admin password. Please re-enter your current password.';
+          this.error = 'You cannot approve your own leave request.';
           return;
         }
         this.error = err?.error?.message ?? 'Approve failed';
@@ -69,28 +61,17 @@ export class HrAdminOverviewComponent implements OnInit {
   }
 
   reject(id: string): void {
-    const password = this.resolveAdminPassword();
-    if (!password) {
-      this.error = 'Admin password is required to approve or reject leave requests.';
-      return;
-    }
     this.error = null;
-    this.adminPassword = password;
-    this.hrService.rejectLeave(id, password).subscribe({
+    this.hrService.rejectLeave(id).subscribe({
       next: () => this.reload(),
       error: err => {
         if (err?.status === 403) {
-          this.error = 'Invalid admin password. Please re-enter your current password.';
+          this.error = 'You cannot reject your own leave request.';
           return;
         }
         this.error = err?.error?.message ?? 'Reject failed';
       }
     });
-  }
-
-  private resolveAdminPassword(): string | null {
-    const p = this.adminPassword.trim();
-    return p ? p : null;
   }
 
   get filteredCandidates(): CandidateRecruitmentRow[] {

@@ -11,7 +11,7 @@ import {
   LeaveTypeCode,
   PortalLeaveRequestRow
 } from '../../services/hr.service';
-import { CvFileMetadata, Department, CareersApplication } from '../../models/hr.models';
+import { CvFileMetadata, Department, CareersApplication, PortalPayrollResponse } from '../../models/hr.models';
 import { AuthService } from '../../services/auth.service';
 import { UserRole } from '../../models/user.models';
 import {
@@ -83,6 +83,10 @@ export class HrPortalComponent implements OnInit {
   applicationError: string | null = null;
   leaveError: string | null = null;
   historyError: string | null = null;
+  payrollError: string | null = null;
+
+  payrollLoading = false;
+  payrollResult: PortalPayrollResponse | null = null;
 
   departments: Department[] = [];
   application: CareersApplication | null = null;
@@ -190,10 +194,21 @@ export class HrPortalComponent implements OnInit {
           this.recomputeView();
           if (res.employeeFound) {
             this.reloadLeaveHistory();
+            this.reloadPayroll();
           }
           this.refreshLeavePreview();
         },
         error: (err: HttpErrorResponse) => {
+          if (err.status === 403) {
+            const body = err.error;
+            const fromBody =
+              body && typeof body === 'object' && 'message' in body
+                ? String((body as { message: unknown }).message)
+                : null;
+            this.leaveError = fromBody
+              ?? 'Your employee profile is pending approval by a Super Admin before you can use leave.';
+            return;
+          }
           this.leaveError = portalLoadErrorMessage(err, 'Could not load leave balance.');
         }
       });
@@ -389,6 +404,31 @@ export class HrPortalComponent implements OnInit {
           const body = err.error;
           const fromBody = body && typeof body === 'object' && 'message' in body ? String((body as any).message) : null;
           this.applicationSaveError = fromBody || err.message || 'Save failed.';
+        }
+      });
+  }
+
+  reloadPayroll(): void {
+    this.payrollLoading = true;
+    this.payrollError = null;
+    this.hr.getMyPayroll()
+      .pipe(finalize(() => { this.payrollLoading = false; }))
+      .subscribe({
+        next: (res) => {
+          this.payrollResult = res;
+        },
+        error: (err: HttpErrorResponse) => {
+          if (err.status === 403) {
+            const body = err.error;
+            const fromBody =
+              body && typeof body === 'object' && 'message' in body
+                ? String((body as { message: unknown }).message)
+                : null;
+            this.payrollError = fromBody
+              ?? 'Payroll is unavailable until your employee profile is activated.';
+            return;
+          }
+          this.payrollError = portalLoadErrorMessage(err, 'Could not load payslip.');
         }
       });
   }

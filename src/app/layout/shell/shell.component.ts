@@ -1,12 +1,14 @@
 import { Component, OnInit, ViewEncapsulation } from '@angular/core';
 import { IsActiveMatchOptions, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { CommonModule } from '@angular/common';
+import { HttpErrorResponse } from '@angular/common/http';
 import { forkJoin, of } from 'rxjs';
 import { catchError, map, switchMap } from 'rxjs/operators';
 import { AuthService } from '../../services/auth.service';
 import { HrService } from '../../services/hr.service';
 import { User, UserRole } from '../../models/user.models';
 import { filterHrMenu, HrMenuBootstrap, HrMenuGroup, isHrWorkspaceUrl } from '../../hr/hr-menu.config';
+import type { LeaveSummaryResponse } from '../../services/hr.service';
 
 interface NavItem {
   label: string;
@@ -54,6 +56,8 @@ export class ShellComponent implements OnInit {
   hrBootstrap: HrMenuBootstrap | null = null;
   hrMenuGroups: HrMenuGroup[] = [];
 
+  visibleNavItems: NavItem[] = [];
+
   constructor(
     private authService: AuthService,
     private hrService: HrService,
@@ -64,18 +68,31 @@ export class ShellComponent implements OnInit {
     this.authService.currentUser$.pipe(
       switchMap(user => {
         this.currentUser = user;
+        this.updateVisibleNavItems();
         if (!user || !this.needsHrBootstrap(user.role)) {
           this.hrBootstrap = null;
           this.refreshHrMenuGroups();
           return of<HrMenuBootstrap | null>(null);
         }
         return forkJoin({
-          leave: this.hrService.getLeaveSummary(),
+          leave: this.hrService.getLeaveSummary().pipe(
+            catchError((err: unknown) => {
+              const e = err as HttpErrorResponse;
+              if (e.status === 403) {
+                return of({
+                  employeeFound: true,
+                  pendingValidation: true
+                } as LeaveSummaryResponse);
+              }
+              return of<LeaveSummaryResponse | null>(null);
+            })
+          ),
           app: this.hrService.getApplicationStatus()
         }).pipe(
           map(({ leave, app }) => ({
-            employeeFound: leave?.employeeFound === true,
-            candidateFound: app?.candidateFound === true
+            employeeFound: leave?.employeeFound === true || leave?.pendingValidation === true,
+            candidateFound: app?.candidateFound === true,
+            employeePendingValidation: leave?.pendingValidation === true
           })),
           catchError(() => of<HrMenuBootstrap | null>(null))
         );
@@ -90,13 +107,14 @@ export class ShellComponent implements OnInit {
     return (
       role === UserRole.STUDENT ||
       role === UserRole.TEACHER ||
+      role === UserRole.REGULAR_STAFF ||
       role === UserRole.LOGISTICS_STAFF ||
       role === UserRole.SUPER_ADMIN
     );
   }
 
-  getVisibleNavItems(): NavItem[] {
-    return this.navItems.filter(item => {
+  private updateVisibleNavItems(): void {
+    this.visibleNavItems = this.navItems.filter(item => {
       if (!item.roles) {
         return true;
       }
@@ -144,21 +162,25 @@ export class ShellComponent implements OnInit {
     return false;
   }
 
+  private readonly exactMatchOptions: IsActiveMatchOptions = {
+    paths: 'exact',
+    matrixParams: 'ignored',
+    queryParams: 'ignored',
+    fragment: 'ignored'
+  };
+
+  private readonly subsetMatchOptions: IsActiveMatchOptions = {
+    paths: 'subset',
+    matrixParams: 'ignored',
+    queryParams: 'ignored',
+    fragment: 'ignored'
+  };
+
   hrLinkActiveOptions(route: string): IsActiveMatchOptions {
     if (route === '/app/hr') {
-      return {
-        paths: 'exact',
-        matrixParams: 'ignored',
-        queryParams: 'ignored',
-        fragment: 'ignored'
-      };
+      return this.exactMatchOptions;
     }
-    return {
-      paths: 'subset',
-      matrixParams: 'ignored',
-      queryParams: 'ignored',
-      fragment: 'ignored'
-    };
+    return this.subsetMatchOptions;
   }
 
   getUserInitials(): string {

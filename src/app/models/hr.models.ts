@@ -6,6 +6,8 @@ export type LeaveType = 'ANNUAL' | 'SICK' | 'EXCEPTIONAL';
 
 export type GradeName = 'ASSISTANT' | 'MAITRE' | 'PROF';
 
+export type EmployeeStatus = 'PENDING_VALIDATION' | 'ACTIVE';
+
 export interface CandidateRecruitmentRow {
   id: string;
   name: string;
@@ -127,8 +129,10 @@ export interface Employee {
   email: string;
   hireDate: string;
   leaveBalance: number;
+  status: EmployeeStatus;
   grade: Grade;
   department: Department;
+  calculatedSalary?: number | null;
 }
 
 export interface EmployeeRequest {
@@ -136,6 +140,7 @@ export interface EmployeeRequest {
   email: string;
   hireDate: string;
   leaveBalance?: number | null;
+  status?: EmployeeStatus | null;
   gradeId: string;
   departmentId: string;
 }
@@ -167,4 +172,23 @@ export interface LeaveRequestRequest {
   type: LeaveType;
   status: LeaveRequestStatus;
   employeeId: string;
+}
+
+export interface PayrollResult {
+  baseSalary: number;
+  dailyRate: number;
+  leaveBalance: number;
+  deduction: number;
+  calculatedSalary: number;
+}
+
+export interface PortalPayrollResponse {
+  employeeFound: boolean;
+  displayName?: string | null;
+  gradeName?: string | null;
+  baseSalary?: number | null;
+  dailyRate?: number | null;
+  leaveBalance?: number | null;
+  deduction?: number | null;
+  calculatedSalary?: number | null;
 }

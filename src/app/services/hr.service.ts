@@ -22,7 +22,9 @@ import {
   InterviewRequest,
   LeaveRequest,
   LeaveRequestPendingRow,
-  LeaveRequestRequest
+  LeaveRequestRequest,
+  PayrollResult,
+  PortalPayrollResponse
 } from '../models/hr.models';
 
 export interface ApplicationStatusResponse {
@@ -37,6 +39,8 @@ export interface LeaveSummaryResponse {
   employeeFound: boolean;
   displayName?: string | null;
   remainingLeaveDays?: number | null;
+  /** Set when API returns 403 (pending onboarding); shell bootstrap only. */
+  pendingValidation?: boolean;
 }
 
 export type LeaveTypeCode = 'ANNUAL' | 'SICK' | 'EXCEPTIONAL';
@@ -156,12 +160,12 @@ export class HrService {
     return this.http.get<Employee>(`${this.adminBase}/employees/${id}`);
   }
 
-  approveLeave(id: string, adminPassword: string): Observable<LeaveRequest> {
-    return this.http.post<LeaveRequest>(`${this.adminBase}/leave-requests/${id}/approve`, { password: adminPassword });
+  approveLeave(id: string): Observable<LeaveRequest> {
+    return this.http.post<LeaveRequest>(`${this.adminBase}/leave-requests/${id}/approve`, {});
   }
 
-  rejectLeave(id: string, adminPassword: string): Observable<LeaveRequest> {
-    return this.http.post<LeaveRequest>(`${this.adminBase}/leave-requests/${id}/reject`, { password: adminPassword });
+  rejectLeave(id: string): Observable<LeaveRequest> {
+    return this.http.post<LeaveRequest>(`${this.adminBase}/leave-requests/${id}/reject`, {});
   }
 
   listCandidates(): Observable<Candidate[]> {
@@ -243,8 +247,20 @@ export class HrService {
     return this.http.delete<void>(`${this.adminBase}/employees/${id}`);
   }
 
-  getEmployeeMonthlyPay(id: string): Observable<number> {
-    return this.http.get<number>(`${this.adminBase}/employees/${id}/monthly-pay`);
+  getEmployeeMonthlyPay(id: string): Observable<PayrollResult> {
+    return this.http.get<PayrollResult>(`${this.adminBase}/employees/${id}/monthly-pay`);
+  }
+
+  activateEmployee(id: string): Observable<Employee> {
+    return this.http.post<Employee>(`${this.adminBase}/employees/${id}/activate`, {});
+  }
+
+  getPendingEmployees(): Observable<Employee[]> {
+    return this.http.get<Employee[]>(`${this.adminBase}/employees/pending`);
+  }
+
+  getMyPayroll(): Observable<PortalPayrollResponse> {
+    return this.http.get<PortalPayrollResponse>(`${this.portalBase}/my-payroll`);
   }
 
   listGrades(): Observable<Grade[]> {

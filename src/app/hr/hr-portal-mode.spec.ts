@@ -28,6 +28,11 @@ describe('hr-portal-mode', () => {
     expect(resolveHrPortalView(ctx)).toBe('employee');
   });
 
+  it('regular staff without employee is employee view (empty state)', () => {
+    const ctx = buildPortalModeContext(UserRole.REGULAR_STAFF, { employeeFound: false }, null);
+    expect(resolveHrPortalView(ctx)).toBe('employee');
+  });
+
   it('logistics without employee is opsOnly', () => {
     const ctx = buildPortalModeContext(UserRole.LOGISTICS_STAFF, { employeeFound: false }, null);
     expect(resolveHrPortalView(ctx)).toBe('opsOnly');

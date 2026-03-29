@@ -19,7 +19,8 @@ import {
   InterviewStatus,
   LeaveRequest,
   LeaveRequestRequest,
-  LeaveRequestPendingRow
+  LeaveRequestPendingRow,
+  PayrollResult
 } from '../../models/hr.models';
 import { HrService } from '../../services/hr.service';
 
@@ -45,7 +46,6 @@ export class HrAdminComponent implements OnInit {
   actionSuccess: string | null = null;
   processingCandidateId: string | null = null;
   processingLeaveId: string | null = null;
-  adminPassword = '';
 
   candidateCrudRows: Candidate[] = [];
   employeeCrudRows: Employee[] = [];
@@ -111,7 +111,7 @@ export class HrAdminComponent implements OnInit {
 
   selectedSalaryEmployeeId = '';
   selectedSalaryEmployeeName = '';
-  salaryAmount: number | null = null;
+  salaryResult: PayrollResult | null = null;
 
   readonly candidateStatuses: CandidateStatus[] = ['NEW', 'INTERVIEWING', 'ACCEPTED', 'REJECTED'];
   readonly interviewStatuses: InterviewStatus[] = ['PLANNED', 'COMPLETED', 'CANCELED'];
@@ -205,7 +205,7 @@ export class HrAdminComponent implements OnInit {
   approveLeave(id: string): void {
     this.clearMessages();
     this.processingLeaveId = id;
-    this.hrService.approveLeave(id, this.adminPassword).subscribe({
+    this.hrService.approveLeave(id).subscribe({
       next: () => {
         this.processingLeaveId = null;
         this.actionSuccess = 'Leave request approved.';
@@ -224,7 +224,7 @@ export class HrAdminComponent implements OnInit {
   rejectLeave(id: string): void {
     this.clearMessages();
     this.processingLeaveId = id;
-    this.hrService.rejectLeave(id, this.adminPassword).subscribe({
+    this.hrService.rejectLeave(id).subscribe({
       next: () => {
         this.processingLeaveId = null;
         this.actionSuccess = 'Leave request rejected.';
@@ -434,13 +434,13 @@ export class HrAdminComponent implements OnInit {
         this.actionSuccess = 'Interview created.';
         this.loadInterviews();
       },
-      error: err => this.actionError = err?.error?.message ?? 'Create interview failed'
+      error: err => this.actionError = err?.error?.message ?? 'Create Interviewerfailed'
     });
   }
 
   updateInterview(): void {
     if (!this.selectedInterviewId) {
-      this.actionError = 'Select interview to update.';
+      this.actionError = 'Select Interviewerto update.';
       return;
     }
     this.clearMessages();
@@ -449,13 +449,13 @@ export class HrAdminComponent implements OnInit {
         this.actionSuccess = 'Interview updated.';
         this.loadInterviews();
       },
-      error: err => this.actionError = err?.error?.message ?? 'Update interview failed'
+      error: err => this.actionError = err?.error?.message ?? 'Update Interviewerfailed'
     });
   }
 
   deleteInterview(): void {
     if (!this.selectedInterviewId) {
-      this.actionError = 'Select interview to delete.';
+      this.actionError = 'Select Interviewerto delete.';
       return;
     }
     this.clearMessages();
@@ -465,7 +465,7 @@ export class HrAdminComponent implements OnInit {
         this.selectedInterviewId = '';
         this.loadInterviews();
       },
-      error: err => this.actionError = err?.error?.message ?? 'Delete interview failed'
+      error: err => this.actionError = err?.error?.message ?? 'Delete Interviewerfailed'
     });
   }
 
@@ -742,8 +742,8 @@ export class HrAdminComponent implements OnInit {
     }
     this.clearMessages();
     this.hrService.getEmployeeMonthlyPay(this.selectedSalaryEmployeeId).subscribe({
-      next: amount => {
-        this.salaryAmount = amount;
+      next: result => {
+        this.salaryResult = result;
         this.actionSuccess = 'Salary calculated.';
       },
       error: err => this.actionError = err?.error?.message ?? 'Salary calculation failed'

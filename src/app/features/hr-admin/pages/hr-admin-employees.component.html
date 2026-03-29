@@ -1,7 +1,7 @@
 <p class="error" *ngIf="error">{{ error }}</p>
 
 <header class="emp-head">
-  <h1>Employee directory</h1>
+  <h1>Employee drafts</h1>
   <button type="button" class="btn-add" (click)="openNew()">Add employee</button>
 </header>
 
@@ -33,10 +33,14 @@
     class="emp-card"
     (click)="openEdit(e)">
     <div class="emp-avatar" [attr.aria-hidden]="true">{{ initials(e.name) }}</div>
-    <span class="status-dot" aria-label="Active"></span>
-    <div class="emp-card-name">{{ e.name }}</div>
+    <span class="status-dot" [class]="statusDotClass(e.status)" [attr.aria-label]="e.status ?? 'ACTIVE'"></span>
+    <div class="emp-card-name">
+      {{ e.name }}
+      <span *ngIf="e.status === 'PENDING_VALIDATION'" class="badge badge--status-pending" style="font-size: 0.65rem; margin-left: 0.5rem;">Pending validation</span>
+      <span *ngIf="e.status === 'ACTIVE' || !e.status" class="badge badge--status-active" style="font-size: 0.65rem; margin-left: 0.5rem;">Active</span>
+    </div>
     <div class="emp-card-meta">{{ e.department.name }}</div>
-    <div class="emp-card-leave">{{ e.leaveBalance }} days leave</div>
+    <div class="emp-card-leave" [class.negative]="e.leaveBalance < 0">{{ e.leaveBalance }} days leave</div>
   </button>
 </div>
 
@@ -60,7 +64,11 @@
   <div class="toolbar">
     <button type="button" (click)="calculateSalary()">Calculate monthly pay</button>
   </div>
-  <p *ngIf="salaryValue !== null">Monthly pay: {{ salaryValue }}</p>
+  <div *ngIf="salaryResult" class="salary-result">
+    <div class="res-row"><span>Base Salary:</span> <strong>{{ salaryResult.baseSalary }}</strong></div>
+    <div class="res-row" *ngIf="salaryResult.deduction > 0"><span>Deduction (Negative Leave):</span> <strong class="danger">-{{ salaryResult.deduction }}</strong></div>
+    <div class="res-row total"><span>Net Salary:</span> <strong class="success">{{ salaryResult.calculatedSalary }}</strong></div>
+  </div>
 </section>
 
 <app-slide-over-panel
@@ -71,7 +79,7 @@
     <label><span>Name</span><input [(ngModel)]="form.name" /></label>
     <label><span>Email</span><input [(ngModel)]="form.email" /></label>
     <label><span>Hire date</span><input type="date" [(ngModel)]="form.hireDate" /></label>
-    <label><span>Leave balance</span><input type="number" min="0" [(ngModel)]="form.leaveBalance" /></label>
+    <label><span>Leave balance</span><input type="number" [(ngModel)]="form.leaveBalance" /></label>
     <label>
       Grade
       <select [(ngModel)]="form.gradeId">
@@ -86,10 +94,18 @@
         <option *ngFor="let d of departments" [value]="d.id">{{ d.name }}</option>
       </select>
     </label>
+    <label *ngIf="currentRole === UserRole.SUPER_ADMIN">
+      Status
+      <select [(ngModel)]="form.status">
+        <option value="ACTIVE">ACTIVE</option>
+        <option value="PENDING_VALIDATION">PENDING_VALIDATION (DRAFT)</option>
+      </select>
+    </label>
   </div>
   <div class="toolbar so-toolbar">
-    <button type="button" class="danger" *ngIf="selectedId" (click)="remove()">Remove</button>
-    <button type="button" *ngIf="!selectedId" (click)="create()">Create</button>
-    <button type="button" *ngIf="selectedId" (click)="update()">Save</button>
+    <button type="button" class="btn btn--primary" *ngIf="selectedId && form.status === 'PENDING_VALIDATION' && currentRole === UserRole.SUPER_ADMIN" (click)="approve()">Approve</button>
+    <button type="button" class="btn btn--outline danger" *ngIf="selectedId" (click)="remove()">Remove</button>
+    <button type="button" class="btn btn--primary" *ngIf="!selectedId" (click)="create()">Create</button>
+    <button type="button" class="btn btn--primary" *ngIf="selectedId" (click)="update()">Save</button>
   </div>
 </app-slide-over-panel>

@@ -12,11 +12,12 @@ import {
 } from '../../../models/hr.models';
 import { HrService } from '../../../services/hr.service';
 import { AuthService } from '../../../services/auth.service';
+import { SlideOverPanelComponent } from '../../../shared/slide-over-panel/slide-over-panel.component';
 
 @Component({
   selector: 'app-hr-admin-leaves',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, SlideOverPanelComponent],
   templateUrl: './hr-admin-leaves.component.html',
   styleUrls: ['./hr-admin-pages.shared.scss', './hr-admin-leaves.component.scss']
 })
@@ -29,7 +30,6 @@ export class HrAdminLeavesComponent implements OnInit {
   searchQuery = '';
   statusFilter: LeaveRequestStatus | 'ALL' = 'ALL';
   typeFilter: LeaveType | 'ALL' = 'ALL';
-  adminPassword = '';
   error: string | null = null;
   selectedLeave: LeaveRequest | null = null;
   contextEmployee: Employee | null = null;
@@ -73,6 +73,7 @@ export class HrAdminLeavesComponent implements OnInit {
       email: r.employeeEmail,
       hireDate: '',
       leaveBalance: 0,
+      status: 'ACTIVE',
       grade: { id: '', name: 'ASSISTANT', baseSalary: 0, hourlyBonus: 0 },
       department: { id: '', name: '' }
     };
@@ -102,22 +103,17 @@ export class HrAdminLeavesComponent implements OnInit {
   }
 
   approve(id: string): void {
-    const password = this.adminPassword.trim();
-    if (!password) {
-      this.error = 'Enter your current password in the field above to approve or reject.';
-      return;
-    }
     const leave = this.pendingLeaves.find(l => l.id === id);
     if (!leave || leave.status !== 'PENDING') {
       this.error = 'Only pending leave requests can be approved.';
       return;
     }
     this.error = null;
-    this.hrService.approveLeave(id, password).subscribe({
+    this.hrService.approveLeave(id).subscribe({
       next: () => this.reload(),
       error: e => {
         if (e?.status === 403) {
-          this.error = 'Invalid admin password. Please re-enter your current password.';
+          this.error = 'You do not have permission to approve this leave request (self-approval is not allowed).';
           return;
         }
         this.error = e?.error?.message ?? 'Approve failed';
@@ -126,22 +122,17 @@ export class HrAdminLeavesComponent implements OnInit {
   }
 
   reject(id: string): void {
-    const password = this.adminPassword.trim();
-    if (!password) {
-      this.error = 'Enter your current password in the field above to approve or reject.';
-      return;
-    }
     const leave = this.pendingLeaves.find(l => l.id === id);
     if (!leave || leave.status !== 'PENDING') {
       this.error = 'Only pending leave requests can be rejected.';
       return;
     }
     this.error = null;
-    this.hrService.rejectLeave(id, password).subscribe({
+    this.hrService.rejectLeave(id).subscribe({
       next: () => this.reload(),
       error: e => {
         if (e?.status === 403) {
-          this.error = 'Invalid admin password. Please re-enter your current password.';
+          this.error = 'You do not have permission to reject this leave request (self-approval is not allowed).';
           return;
         }
         this.error = e?.error?.message ?? 'Reject failed';

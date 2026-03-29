@@ -16,6 +16,13 @@ describe('filterHrMenu', () => {
     expect(flat.some(l => l.route === '/app/profile')).toBe(true);
   });
 
+  it('returns regular staff same as teacher', () => {
+    const g = filterHrMenu(UserRole.REGULAR_STAFF);
+    const flat = g.flatMap(x => x.links);
+    expect(flat.some(l => l.route === '/app/hr')).toBe(true);
+    expect(flat.some(l => l.route === '/app/profile')).toBe(true);
+  });
+
   it('returns recruitment and people for logistics without governance', () => {
     const g = filterHrMenu(UserRole.LOGISTICS_STAFF);
     const labels = g.map(x => x.id);

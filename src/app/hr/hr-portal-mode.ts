@@ -34,7 +34,7 @@ export function resolveHrPortalView(ctx: HrPortalModeContext): HrPortalView {
     return 'career';
   }
 
-  if (role === UserRole.TEACHER) {
+  if (role === UserRole.TEACHER || role === UserRole.REGULAR_STAFF) {
     return 'employee';
   }
 
