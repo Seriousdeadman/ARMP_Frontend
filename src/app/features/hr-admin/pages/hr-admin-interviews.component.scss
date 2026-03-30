@@ -1,0 +1,117 @@
+.int-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.int-head h1 {
+  margin: 0;
+  font-size: 22px;
+}
+
+.btn-add {
+  background: #1a1a18;
+  color: #fff;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.int-filters {
+  margin-bottom: 20px;
+}
+
+.ok-banner {
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: #e8f5e9;
+  color: #1b5e20;
+  font-size: 14px;
+}
+
+.int-skel-table {
+  border: 1px solid #ece8df;
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 20px;
+}
+
+.int-skel-row {
+  display: flex;
+  gap: 10px;
+  padding: 10px 12px;
+  border-bottom: 1px solid #f0ede6;
+  align-items: center;
+}
+
+.int-skel-cell {
+  height: 14px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, #f0ede6 0%, #e8e4dc 50%, #f0ede6 100%);
+  background-size: 200% 100%;
+  animation: int-shimmer 1.2s ease-in-out infinite;
+  flex: 1;
+  min-width: 60px;
+}
+
+.int-skel-cell.wide {
+  flex: 2;
+}
+
+.int-skel-cell.narrow {
+  flex: 0.6;
+}
+
+.int-skel-cell.actions {
+  flex: 0 0 120px;
+}
+
+@keyframes int-shimmer {
+  0% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: -100% 0;
+  }
+}
+
+.int-table-panel {
+  margin-bottom: 24px;
+}
+
+.row-selected {
+  background: #faf8f4;
+}
+
+.muted {
+  color: #666;
+  font-size: 14px;
+  margin: 0;
+}
+
+.panel-footer {
+  flex-wrap: wrap;
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid #ece8df;
+}
+
+.btn-primary {
+  background: #1a1a18;
+  color: #fff;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

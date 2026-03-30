@@ -11,7 +11,11 @@ describe('HrAdminInterviewsComponent', () => {
   let router: jasmine.SpyObj<Router>;
 
   beforeEach(async () => {
-    hr = jasmine.createSpyObj('HrService', ['listInterviews', 'listCandidates']);
+    hr = jasmine.createSpyObj('HrService', [
+      'listInterviews',
+      'listCandidates',
+      'listEmployees'
+    ]);
     hr.listInterviews.and.returnValue(of([]));
     router = jasmine.createSpyObj('Router', ['navigate']);
 
@@ -24,6 +28,7 @@ describe('HrAdminInterviewsComponent', () => {
       department: { id: 'd1', name: 'CS' }
     };
     hr.listCandidates.and.returnValue(of([candidate]));
+    hr.listEmployees.and.returnValue(of([]));
 
     await TestBed.configureTestingModule({
       imports: [HrAdminInterviewsComponent],
@@ -34,7 +39,7 @@ describe('HrAdminInterviewsComponent', () => {
           provide: ActivatedRoute,
           useValue: {
             snapshot: { queryParamMap: { get: (k: string) => (k === 'candidateId' ? 'c1' : null) } },
-            queryParamMap: of({ get: () => null })
+            queryParamMap: of({ get: () => null } as { get: (key: string) => string | null })
           }
         }
       ]
@@ -44,8 +49,9 @@ describe('HrAdminInterviewsComponent', () => {
     fixture.detectChanges();
   });
 
-  it('preselects candidateId from query param when loading candidates', () => {
+  it('opens panel and preselects candidateId from query param', () => {
     expect(fixture.componentInstance.form.candidateId).toBe('c1');
+    expect(fixture.componentInstance.panelOpen).toBe(true);
     expect(router.navigate).toHaveBeenCalled();
   });
 });

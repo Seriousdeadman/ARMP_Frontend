@@ -14,9 +14,6 @@ import {
   Grade,
   GradeName,
   GradeRequest,
-  Interview,
-  InterviewRequest,
-  InterviewStatus,
   LeaveRequest,
   LeaveRequestRequest,
   LeaveRequestPendingRow,
@@ -29,7 +26,7 @@ import { HrService } from '../../services/hr.service';
   standalone: true,
   imports: [CommonModule, FormsModule],
   templateUrl: './hr-admin.component.html',
-  styleUrl: './hr-admin.component.scss'
+  styleUrls: ['./hr-admin.component.scss', './pages/hr-admin-pages.shared.scss']
 })
 export class HrAdminComponent implements OnInit {
 
@@ -51,11 +48,9 @@ export class HrAdminComponent implements OnInit {
   employeeCrudRows: Employee[] = [];
   gradeRows: Grade[] = [];
   departmentRows: Department[] = [];
-  interviewRows: Interview[] = [];
   leaveRequestRows: LeaveRequest[] = [];
 
   selectedCandidateId = '';
-  selectedInterviewId = '';
   selectedEmployeeId = '';
   selectedGradeId = '';
   selectedDepartmentId = '';
@@ -74,14 +69,6 @@ export class HrAdminComponent implements OnInit {
     status: 'NEW',
     departmentId: '',
     skillsAndExperience: ''
-  };
-
-  interviewForm: InterviewRequest = {
-    interviewDate: '',
-    location: '',
-    score: null,
-    status: 'PLANNED',
-    candidateId: ''
   };
 
   employeeForm: EmployeeRequest = {
@@ -114,7 +101,6 @@ export class HrAdminComponent implements OnInit {
   salaryResult: PayrollResult | null = null;
 
   readonly candidateStatuses: CandidateStatus[] = ['NEW', 'INTERVIEWING', 'ACCEPTED', 'REJECTED'];
-  readonly interviewStatuses: InterviewStatus[] = ['PLANNED', 'COMPLETED', 'CANCELED'];
   readonly gradeNames: GradeName[] = ['ASSISTANT', 'MAITRE', 'PROF'];
 
   constructor(private hrService: HrService) {}
@@ -124,7 +110,6 @@ export class HrAdminComponent implements OnInit {
     this.loadPendingLeaves();
     this.loadEmployees();
     this.loadCandidatesCrud();
-    this.loadInterviews();
     this.loadEmployeesCrud();
     this.loadGrades();
     this.loadDepartments();
@@ -419,69 +404,6 @@ export class HrAdminComponent implements OnInit {
       },
       error: err => this.actionError = err?.error?.message ?? 'Delete file failed'
     });
-  }
-
-  loadInterviews(): void {
-    this.hrService.listInterviews().subscribe({
-      next: rows => this.interviewRows = rows
-    });
-  }
-
-  createInterview(): void {
-    this.clearMessages();
-    this.hrService.createInterview(this.interviewForm).subscribe({
-      next: () => {
-        this.actionSuccess = 'Interview created.';
-        this.loadInterviews();
-      },
-      error: err => this.actionError = err?.error?.message ?? 'Create Interviewerfailed'
-    });
-  }
-
-  updateInterview(): void {
-    if (!this.selectedInterviewId) {
-      this.actionError = 'Select Interviewerto update.';
-      return;
-    }
-    this.clearMessages();
-    this.hrService.updateInterview(this.selectedInterviewId, this.interviewForm).subscribe({
-      next: () => {
-        this.actionSuccess = 'Interview updated.';
-        this.loadInterviews();
-      },
-      error: err => this.actionError = err?.error?.message ?? 'Update Interviewerfailed'
-    });
-  }
-
-  deleteInterview(): void {
-    if (!this.selectedInterviewId) {
-      this.actionError = 'Select Interviewerto delete.';
-      return;
-    }
-    this.clearMessages();
-    this.hrService.deleteInterview(this.selectedInterviewId).subscribe({
-      next: () => {
-        this.actionSuccess = 'Interview deleted.';
-        this.selectedInterviewId = '';
-        this.loadInterviews();
-      },
-      error: err => this.actionError = err?.error?.message ?? 'Delete Interviewerfailed'
-    });
-  }
-
-  onInterviewPicked(id: string): void {
-    this.selectedInterviewId = id;
-    const row = this.interviewRows.find(i => i.id === id);
-    if (!row) {
-      return;
-    }
-    this.interviewForm = {
-      interviewDate: row.interviewDate,
-      location: row.location,
-      score: row.score ?? null,
-      status: row.status,
-      candidateId: row.candidate.id
-    };
   }
 
   loadEmployeesCrud(): void {

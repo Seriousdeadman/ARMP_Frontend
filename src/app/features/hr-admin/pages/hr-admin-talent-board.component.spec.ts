@@ -11,15 +11,21 @@ describe('HrAdminTalentBoardComponent', () => {
   beforeEach(async () => {
     hr = jasmine.createSpyObj('HrService', [
       'listRecruitmentCandidates',
+      'listRecruitmentAssignments',
       'listGrades',
+      'listDepartments',
       'patchCandidateStatus',
       'promoteCandidate',
       'getCandidate',
       'getCandidateCvFileMetadata',
-      'downloadCandidateCvFile'
+      'downloadCandidateCvFile',
+      'listInterviews'
     ]);
     hr.listRecruitmentCandidates.and.returnValue(of([]));
+    hr.listRecruitmentAssignments.and.returnValue(of([]));
     hr.listGrades.and.returnValue(of([]));
+    hr.listDepartments.and.returnValue(of([]));
+    hr.listInterviews.and.returnValue(of([]));
 
     await TestBed.configureTestingModule({
       imports: [HrAdminTalentBoardComponent],
@@ -55,6 +61,7 @@ describe('HrAdminTalentBoardComponent', () => {
       email: 'a@test.com',
       phone: '1',
       status: 'NEW',
+      departmentId: 'd1',
       departmentName: 'CS',
       interviewScore: null
     });
@@ -79,6 +86,7 @@ describe('HrAdminTalentBoardComponent', () => {
       email: 'a@test.com',
       phone: '1',
       status: 'NEW',
+      departmentId: null,
       departmentName: null,
       interviewScore: null
     });

@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 import {
@@ -20,6 +20,7 @@ import {
   GradeRequest,
   Interview,
   InterviewRequest,
+  RecruitmentAssignment,
   LeaveRequest,
   LeaveRequestPendingRow,
   LeaveRequestRequest,
@@ -139,6 +140,10 @@ export class HrService {
     return this.http.get<CandidateRecruitmentRow[]>(`${this.adminBase}/candidates/recruitment`);
   }
 
+  listRecruitmentAssignments(): Observable<RecruitmentAssignment[]> {
+    return this.http.get<RecruitmentAssignment[]>(`${this.adminBase}/candidates/recruitment/assignments`);
+  }
+
   listPendingLeaveRequests(): Observable<LeaveRequestPendingRow[]> {
     return this.http.get<LeaveRequestPendingRow[]>(`${this.adminBase}/leave-requests/pending`);
   }
@@ -147,8 +152,17 @@ export class HrService {
     return this.http.get<EmployeeDirectoryRow[]>(`${this.adminBase}/employees/directory`);
   }
 
-  promoteCandidate(candidateId: string, gradeId?: string | null): Observable<Employee> {
-    const body = gradeId ? { gradeId } : {};
+  promoteCandidate(
+    candidateId: string,
+    options?: { gradeId?: string | null; departmentId?: string | null }
+  ): Observable<Employee> {
+    const body: Record<string, string> = {};
+    if (options?.gradeId) {
+      body['gradeId'] = options.gradeId;
+    }
+    if (options?.departmentId) {
+      body['departmentId'] = options.departmentId;
+    }
     return this.http.post<Employee>(`${this.adminBase}/candidates/${candidateId}/promote`, body);
   }
 
@@ -168,8 +182,15 @@ export class HrService {
     return this.http.post<LeaveRequest>(`${this.adminBase}/leave-requests/${id}/reject`, {});
   }
 
-  listCandidates(): Observable<Candidate[]> {
-    return this.http.get<Candidate[]>(`${this.adminBase}/candidates`);
+  listCandidates(options?: { excludePromoted?: boolean; departmentId?: string }): Observable<Candidate[]> {
+    let params = new HttpParams();
+    if (options?.excludePromoted) {
+      params = params.set('excludePromoted', 'true');
+    }
+    if (options?.departmentId) {
+      params = params.set('departmentId', options.departmentId);
+    }
+    return this.http.get<Candidate[]>(`${this.adminBase}/candidates`, { params });
   }
 
   getCandidate(id: string): Observable<Candidate> {
@@ -253,10 +274,6 @@ export class HrService {
 
   activateEmployee(id: string): Observable<Employee> {
     return this.http.post<Employee>(`${this.adminBase}/employees/${id}/activate`, {});
-  }
-
-  getPendingEmployees(): Observable<Employee[]> {
-    return this.http.get<Employee[]>(`${this.adminBase}/employees/pending`);
   }
 
   getMyPayroll(): Observable<PortalPayrollResponse> {

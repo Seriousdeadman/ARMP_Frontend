@@ -101,6 +101,10 @@
         <option value="PENDING_VALIDATION">PENDING_VALIDATION (DRAFT)</option>
       </select>
     </label>
+    <label *ngIf="currentRole === UserRole.SUPER_ADMIN" class="emp-grant-hr">
+      <input type="checkbox" [(ngModel)]="form.grantLogisticsStaffRole" />
+      <span>Grant HR admin access (LOGISTICS_STAFF) for user with this email</span>
+    </label>
   </div>
   <div class="toolbar so-toolbar">
     <button type="button" class="btn btn--primary" *ngIf="selectedId && form.status === 'PENDING_VALIDATION' && currentRole === UserRole.SUPER_ADMIN" (click)="approve()">Approve</button>

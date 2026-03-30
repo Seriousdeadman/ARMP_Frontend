@@ -9,7 +9,10 @@ import {
   CandidateRecruitmentRow,
   CandidateStatus,
   CvFileMetadata,
-  Grade
+  Department,
+  Grade,
+  Interview,
+  RecruitmentAssignment
 } from '../../../models/hr.models';
 import { RouterLink } from '@angular/router';
 import { HrService } from '../../../services/hr.service';
@@ -45,7 +48,9 @@ export class HrAdminTalentBoardComponent implements OnInit {
   hirePanelOpen = false;
   hireCandidate: CandidateRecruitmentRow | null = null;
   grades: Grade[] = [];
+  departments: Department[] = [];
   selectedGradeId = '';
+  selectedDepartmentId = '';
   hireSubmitting = false;
   hireError: string | null = null;
 
@@ -53,34 +58,159 @@ export class HrAdminTalentBoardComponent implements OnInit {
   reviewLoading = false;
   reviewError: string | null = null;
   reviewDetail: Candidate | null = null;
+  reviewRow: CandidateRecruitmentRow | null = null;
+  reviewInterviews: Interview[] = [];
   reviewFileMeta: CvFileMetadata | null = null;
+
+  assignments: RecruitmentAssignment[] = [];
+  assignmentsLoading = false;
+
+  /** Accepted candidates pinned to the bottom panel for interview timeline review. */
+  trackedAcceptedIds: string[] = [];
+  interviewsByCandidateId = new Map<string, Interview[]>();
+  interviewLoadErrorById = new Map<string, string>();
+  private interviewLoadingIds = new Set<string>();
+
+  isInterviewLoading(candidateId: string): boolean {
+    return this.interviewLoadingIds.has(candidateId);
+  }
+
+  expandedTrackedId: string | null = null;
+  expandedAssignmentEmployeeId: string | null = null;
 
   ngOnInit(): void {
     this.reload();
-    this.hr.listGrades().subscribe({
-      next: g => {
-        this.grades = g;
-        if (g.length > 0 && !this.selectedGradeId) {
-          this.selectedGradeId = g[0].id;
+    forkJoin({
+      grades: this.hr.listGrades().pipe(catchError(() => of<Grade[]>([]))),
+      departments: this.hr.listDepartments().pipe(catchError(() => of<Department[]>([])))
+    }).subscribe({
+      next: ({ grades, departments }) => {
+        this.grades = grades;
+        this.departments = departments;
+        if (grades.length > 0 && !this.selectedGradeId) {
+          this.selectedGradeId = grades[0].id;
         }
       },
       error: () => {
         this.grades = [];
+        this.departments = [];
       }
     });
   }
 
   reload(): void {
     this.isLoading = true;
+    this.assignmentsLoading = true;
     this.error = null;
-    this.hr.listRecruitmentCandidates()
-      .pipe(finalize(() => { this.isLoading = false; }))
+    forkJoin({
+      rows: this.hr.listRecruitmentCandidates(),
+      assigned: this.hr.listRecruitmentAssignments().pipe(
+        catchError(() => of<RecruitmentAssignment[]>([]))
+      )
+    })
+      .pipe(finalize(() => {
+        this.isLoading = false;
+        this.assignmentsLoading = false;
+      }))
       .subscribe({
-        next: rows => this.distribute(rows),
+        next: ({ rows, assigned }) => {
+          this.assignments = assigned;
+          this.distribute(rows);
+          this.pruneTrackedAccepted(rows);
+        },
         error: err => {
           this.error = err?.error?.message ?? 'Failed to load talent board';
         }
       });
+  }
+
+  private pruneTrackedAccepted(rows: CandidateRecruitmentRow[]): void {
+    const ids = new Set(rows.map(r => r.id));
+    this.trackedAcceptedIds = this.trackedAcceptedIds.filter(id => ids.has(id));
+    const nextMap = new Map(this.interviewsByCandidateId);
+    const nextErr = new Map(this.interviewLoadErrorById);
+    for (const id of [...nextMap.keys()]) {
+      if (!ids.has(id)) {
+        nextMap.delete(id);
+        nextErr.delete(id);
+      }
+    }
+    this.interviewsByCandidateId = nextMap;
+    this.interviewLoadErrorById = nextErr;
+  }
+
+  getTrackedAcceptedRows(): CandidateRecruitmentRow[] {
+    const accepted = this.columns.find(c => c.id === 'ACCEPTED')?.cards ?? [];
+    return this.trackedAcceptedIds
+      .map(id => accepted.find(r => r.id === id))
+      .filter((r): r is CandidateRecruitmentRow => r != null);
+  }
+
+  isTrackedAccepted(id: string): boolean {
+    return this.trackedAcceptedIds.includes(id);
+  }
+
+  toggleTrackAccepted(row: CandidateRecruitmentRow): void {
+    if (row.status !== 'ACCEPTED') {
+      return;
+    }
+    const i = this.trackedAcceptedIds.indexOf(row.id);
+    if (i >= 0) {
+      this.trackedAcceptedIds = this.trackedAcceptedIds.filter(id => id !== row.id);
+      const nm = new Map(this.interviewsByCandidateId);
+      nm.delete(row.id);
+      this.interviewsByCandidateId = nm;
+      const ne = new Map(this.interviewLoadErrorById);
+      ne.delete(row.id);
+      this.interviewLoadErrorById = ne;
+      if (this.expandedTrackedId === row.id) {
+        this.expandedTrackedId = null;
+      }
+      return;
+    }
+    this.trackedAcceptedIds = [...this.trackedAcceptedIds, row.id];
+    this.fetchInterviewsFor(row.id);
+    this.expandedTrackedId = row.id;
+  }
+
+  toggleExpandTracked(id: string): void {
+    this.expandedTrackedId = this.expandedTrackedId === id ? null : id;
+  }
+
+  toggleExpandAssignment(employeeId: string): void {
+    this.expandedAssignmentEmployeeId =
+      this.expandedAssignmentEmployeeId === employeeId ? null : employeeId;
+  }
+
+  private fetchInterviewsFor(candidateId: string): void {
+    if (this.interviewLoadingIds.has(candidateId)) {
+      return;
+    }
+    this.interviewLoadingIds.add(candidateId);
+    const clearedErr = new Map(this.interviewLoadErrorById);
+    clearedErr.delete(candidateId);
+    this.interviewLoadErrorById = clearedErr;
+    this.hr.listInterviews(candidateId).subscribe({
+      next: list => {
+        const nextMap = new Map(this.interviewsByCandidateId);
+        nextMap.set(candidateId, list);
+        this.interviewsByCandidateId = nextMap;
+        this.interviewLoadingIds.delete(candidateId);
+      },
+      error: err => {
+        const ne = new Map(this.interviewLoadErrorById);
+        ne.set(candidateId, err?.error?.message ?? 'Could not load interviews');
+        this.interviewLoadErrorById = ne;
+        this.interviewLoadingIds.delete(candidateId);
+      }
+    });
+  }
+
+  formatWhen(iso: string | null | undefined): string {
+    if (!iso) {
+      return '—';
+    }
+    return new Date(iso).toLocaleString();
   }
 
   private distribute(rows: CandidateRecruitmentRow[]): void {
@@ -107,6 +237,10 @@ export class HrAdminTalentBoardComponent implements OnInit {
 
   trackCard(_i: number, row: CandidateRecruitmentRow): string {
     return row.id;
+  }
+
+  trackAssignment(_i: number, row: RecruitmentAssignment): string {
+    return row.employeeId;
   }
 
   onDrop(event: CdkDragDrop<CandidateRecruitmentRow[]>, targetStatus: CandidateStatus): void {
@@ -139,10 +273,8 @@ export class HrAdminTalentBoardComponent implements OnInit {
         if (targetStatus === 'ACCEPTED') {
           this.hireCandidate = row;
           this.hireError = null;
+          this.applyHireDefaults(row.departmentId);
           this.hirePanelOpen = true;
-          if (this.grades.length > 0 && !this.selectedGradeId) {
-            this.selectedGradeId = this.grades[0].id;
-          }
         }
       },
       error: err => {
@@ -163,7 +295,10 @@ export class HrAdminTalentBoardComponent implements OnInit {
     }
     this.hireSubmitting = true;
     this.hireError = null;
-    this.hr.promoteCandidate(this.hireCandidate.id, this.selectedGradeId)
+    this.hr.promoteCandidate(this.hireCandidate.id, {
+      gradeId: this.selectedGradeId,
+      departmentId: this.selectedDepartmentId || null
+    })
       .pipe(finalize(() => { this.hireSubmitting = false; }))
       .subscribe({
         next: () => {
@@ -181,20 +316,31 @@ export class HrAdminTalentBoardComponent implements OnInit {
   }
 
   openReview(row: CandidateRecruitmentRow): void {
+    this.reviewRow = row;
+    this.reviewInterviews = [];
     this.reviewPanelOpen = true;
     this.reviewLoading = true;
     this.reviewError = null;
     this.reviewDetail = null;
     this.reviewFileMeta = null;
+    const interviews$ =
+      row.status === 'ACCEPTED' || row.status === 'INTERVIEWING'
+        ? this.hr.listInterviews(row.id).pipe(catchError(() => of<Interview[]>([])))
+        : of<Interview[]>([]);
     forkJoin({
       candidate: this.hr.getCandidate(row.id),
-      meta: this.hr.getCandidateCvFileMetadata(row.id).pipe(catchError(() => of(null)))
+      meta: this.hr.getCandidateCvFileMetadata(row.id).pipe(catchError(() => of(null))),
+      interviews: interviews$
     })
       .pipe(finalize(() => { this.reviewLoading = false; }))
       .subscribe({
-        next: ({ candidate, meta }) => {
+        next: ({ candidate, meta, interviews }) => {
           this.reviewDetail = candidate;
           this.reviewFileMeta = meta;
+          const list = interviews ?? [];
+          this.reviewInterviews = list.slice().sort(
+            (a, b) => new Date(a.interviewDate).getTime() - new Date(b.interviewDate).getTime()
+          );
         },
         error: err => {
           this.reviewError = err?.error?.message ?? 'Could not load candidate';
@@ -205,8 +351,34 @@ export class HrAdminTalentBoardComponent implements OnInit {
   closeReview(): void {
     this.reviewPanelOpen = false;
     this.reviewDetail = null;
+    this.reviewRow = null;
+    this.reviewInterviews = [];
     this.reviewFileMeta = null;
     this.reviewError = null;
+  }
+
+  openHireFromReview(): void {
+    if (!this.reviewRow || this.reviewRow.status !== 'ACCEPTED' || !this.reviewDetail) {
+      return;
+    }
+    this.hireCandidate = this.reviewRow;
+    this.hireError = null;
+    const hint = this.reviewDetail.department?.id ?? this.reviewRow.departmentId;
+    this.applyHireDefaults(hint);
+    this.closeReview();
+    this.hirePanelOpen = true;
+  }
+
+  private applyHireDefaults(departmentIdHint: string | null | undefined): void {
+    const id = departmentIdHint?.trim();
+    if (id && this.departments.some(d => d.id === id)) {
+      this.selectedDepartmentId = id;
+    } else {
+      this.selectedDepartmentId = '';
+    }
+    if (this.grades.length > 0 && !this.selectedGradeId) {
+      this.selectedGradeId = this.grades[0].id;
+    }
   }
 
   downloadReviewCv(): void {

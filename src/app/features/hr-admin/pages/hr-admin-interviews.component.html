@@ -1,32 +1,49 @@
 <p class="error" *ngIf="error">{{ error }}</p>
+<p class="ok-banner" *ngIf="success">{{ success }}</p>
 
-<section class="panel">
-  <h2>Interview Management</h2>
-  <p>Use the list below to review interviews, then select one to edit.</p>
-  <div class="filters">
-    <label>
-      Search
-      <input [(ngModel)]="searchQuery" placeholder="Candidate, location, status..." />
-    </label>
-    <label>
-      Status
-      <select [(ngModel)]="statusFilter">
-        <option value="ALL">All</option>
-        <option *ngFor="let s of statuses" [ngValue]="s">{{ s }}</option>
-      </select>
-    </label>
-    <label>
-      Candidate
-      <select [(ngModel)]="candidateFilterId">
-        <option value="ALL">All</option>
-        <option *ngFor="let c of candidates" [value]="c.id">{{ c.name }}</option>
-      </select>
-    </label>
+<header class="int-head">
+  <h1>Interview schedule</h1>
+  <button type="button" class="btn-add" (click)="openNew()">Add interview</button>
+</header>
+
+<div class="filters int-filters">
+  <label>
+    Search
+    <input [(ngModel)]="searchQuery" placeholder="Candidate, interviewer, location, status..." />
+  </label>
+  <label>
+    Status
+    <select [(ngModel)]="statusFilter">
+      <option value="ALL">All</option>
+      <option *ngFor="let s of statuses" [ngValue]="s">{{ statusLabel(s) }}</option>
+    </select>
+  </label>
+  <label>
+    Candidate
+    <select [(ngModel)]="candidateFilterId">
+      <option value="ALL">All</option>
+      <option *ngFor="let c of candidates" [value]="c.id">{{ c.name }}</option>
+    </select>
+  </label>
+</div>
+
+<div class="int-skel-table" *ngIf="isLoading">
+  <div class="int-skel-row" *ngFor="let _ of [1, 2, 3, 4, 5, 6]">
+    <div class="int-skel-cell wide"></div>
+    <div class="int-skel-cell"></div>
+    <div class="int-skel-cell"></div>
+    <div class="int-skel-cell narrow"></div>
+    <div class="int-skel-cell narrow"></div>
+    <div class="int-skel-cell actions"></div>
   </div>
+</div>
+
+<section class="panel int-table-panel" *ngIf="!isLoading">
   <table class="table" *ngIf="filteredInterviews.length > 0; else emptyState">
     <thead>
       <tr>
         <th>Candidate</th>
+        <th>Interviewer</th>
         <th>Date & time</th>
         <th>Location</th>
         <th>Status</th>
@@ -35,50 +52,72 @@
       </tr>
     </thead>
     <tbody>
-      <tr *ngFor="let i of filteredInterviews">
+      <tr *ngFor="let i of filteredInterviews" [class.row-selected]="selectedRowId === i.id">
         <td>{{ i.candidate.name }}</td>
+        <td>{{ i.interviewer?.name ?? '—' }}</td>
         <td>{{ i.interviewDate | date:'medium' }}</td>
         <td>{{ i.location }}</td>
-        <td>{{ i.status }}</td>
-        <td>{{ i.score ?? '-' }}</td>
+        <td>{{ statusLabel(i.status) }}</td>
+        <td>{{ displayScore(i) }}</td>
         <td class="actions">
-          <button type="button" (click)="pick(i.id)">Edit</button>
+          <button type="button" (click)="openEdit(i)">Edit</button>
+          <button type="button" class="danger" (click)="confirmDelete(i)">Delete</button>
         </td>
       </tr>
     </tbody>
   </table>
   <ng-template #emptyState>
-    <p *ngIf="!loading">No interviews yet. Schedule the first one below.</p>
+    <p class="muted">No interviews match your filters. Use Add interview to schedule one.</p>
   </ng-template>
+</section>
+
+<app-slide-over-panel
+  [open]="panelOpen"
+  [title]="editingId ? 'Edit interview' : 'New interview'"
+  (closed)="closePanel()">
   <div class="form-grid">
     <label>
-      Interview
-      <select [(ngModel)]="selectedId" (ngModelChange)="pick($event)">
-        <option value="">-- New --</option>
-        <option *ngFor="let i of interviews" [value]="i.id">{{ i.candidate.name }} · {{ i.status }}</option>
+      Interviewer
+      <select [(ngModel)]="form.interviewerId">
+        <option value="">— Select —</option>
+        <option *ngFor="let e of activeEmployees" [value]="e.id">{{ e.name }} ({{ e.email }})</option>
       </select>
     </label>
     <label>
       Candidate
       <select [(ngModel)]="form.candidateId">
-        <option value="">-- Select --</option>
+        <option value="">— Select —</option>
         <option *ngFor="let c of candidates" [value]="c.id">{{ c.name }}</option>
       </select>
     </label>
-    <label><span>Date time</span><input type="datetime-local" [(ngModel)]="form.interviewDate" /></label>
+    <label><span>Date & time</span><input type="datetime-local" [(ngModel)]="form.interviewDate" /></label>
     <label><span>Location</span><input [(ngModel)]="form.location" /></label>
-    <label><span>Score</span><input type="number" min="0" max="20" [(ngModel)]="form.score" /></label>
     <label>
       Status
-      <select [(ngModel)]="form.status">
-        <option *ngFor="let s of statuses" [ngValue]="s">{{ s }}</option>
+      <select [(ngModel)]="form.status" (ngModelChange)="onStatusChange()">
+        <option *ngFor="let s of statuses" [ngValue]="s">{{ statusLabel(s) }}</option>
       </select>
     </label>
+    <label *ngIf="form.status === 'COMPLETED'">
+      <span>Score (0–20, after interview)</span>
+      <input type="number" min="0" max="20" [(ngModel)]="form.score" />
+    </label>
   </div>
-  <div class="toolbar">
-    <button type="button" (click)="startNew()">Reset Form</button>
-    <button (click)="create()">Schedule Interview</button>
-    <button (click)="update()">Save Changes</button>
-    <button class="danger" (click)="remove()">Remove Interview</button>
+  <div class="toolbar panel-footer">
+    <button type="button" (click)="closePanel()">Cancel</button>
+    <button
+      *ngIf="!editingId"
+      type="button"
+      class="btn-primary"
+      (click)="submitPanel()">
+      Schedule
+    </button>
+    <button
+      *ngIf="editingId"
+      type="button"
+      class="btn-primary"
+      (click)="submitPanel()">
+      Save
+    </button>
   </div>
-</section>
+</app-slide-over-panel>

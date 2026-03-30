@@ -14,6 +14,7 @@ export interface CandidateRecruitmentRow {
   email: string;
   phone: string;
   status: CandidateStatus;
+  departmentId: string | null;
   departmentName: string | null;
   interviewScore: number | null;
 }
@@ -106,6 +107,12 @@ export interface CvFileMetadata {
 
 export type InterviewStatus = 'PLANNED' | 'COMPLETED' | 'CANCELED';
 
+export interface InterviewerSummary {
+  id: string;
+  name: string;
+  email: string;
+}
+
 export interface Interview {
   id: string;
   interviewDate: string;
@@ -113,6 +120,30 @@ export interface Interview {
   score?: number | null;
   status: InterviewStatus;
   candidate: Candidate;
+  interviewer?: InterviewerSummary | null;
+}
+
+/** Timeline row from recruitment assignments API (no nested candidate). */
+export interface InterviewTimelineItem {
+  id: string;
+  interviewDate: string;
+  location: string;
+  status: InterviewStatus;
+  score?: number | null;
+}
+
+export interface RecruitmentAssignment {
+  employeeId: string;
+  candidateId: string;
+  name: string;
+  email: string;
+  departmentName: string | null;
+  gradeName: string;
+  hireDate: string;
+  promotedAt: string | null;
+  promotedByLabel: string | null;
+  candidatePipelineStatus: CandidateStatus;
+  interviews: InterviewTimelineItem[];
 }
 
 export interface InterviewRequest {
@@ -121,6 +152,7 @@ export interface InterviewRequest {
   score?: number | null;
   status: InterviewStatus;
   candidateId: string;
+  interviewerId: string;
 }
 
 export interface Employee {
@@ -143,6 +175,8 @@ export interface EmployeeRequest {
   status?: EmployeeStatus | null;
   gradeId: string;
   departmentId: string;
+  /** Super Admin only: set linked user's role to LOGISTICS_STAFF when email matches. */
+  grantLogisticsStaffRole?: boolean;
 }
 
 export interface GradeRequest {

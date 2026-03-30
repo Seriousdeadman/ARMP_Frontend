@@ -9,7 +9,7 @@
 
   <section class="panel">
     <h2 class="section-title">Recruitment</h2>
-    <p class="section-hint">Latest Interviewerscore per candidate (most recent dated Interviewerwith a score).</p>
+    <p class="section-hint">Latest interview score per candidate (most recent completed interview with a score).</p>
     <div class="loading" *ngIf="loadingCandidates">Loading candidates…</div>
     <div class="table-wrap" *ngIf="!loadingCandidates">
       <table class="data-table">
@@ -214,51 +214,6 @@
       <button class="btn btn-ok" [disabled]="cvBusy" (click)="uploadCvFile()">Upload File</button>
       <button class="btn btn-primary" (click)="downloadCvFile()">Download/Preview File</button>
       <button class="btn btn-bad" (click)="deleteCvFile()">Delete File</button>
-    </div>
-  </section>
-
-  <section class="panel">
-    <h2 class="section-title">Interviews CRUD</h2>
-    <div class="crud-grid">
-      <label>
-        Select interview
-        <select [(ngModel)]="selectedInterviewId" (ngModelChange)="onInterviewPicked($event)">
-          <option value="">-- New / none --</option>
-          <option *ngFor="let i of interviewRows" [value]="i.id">
-            {{ i.candidate.name }} · {{ i.status }} · {{ i.interviewDate | date:'short' }}
-          </option>
-        </select>
-      </label>
-      <label>
-        Candidate
-        <select [(ngModel)]="interviewForm.candidateId">
-          <option value="">-- Select candidate --</option>
-          <option *ngFor="let c of candidateCrudRows" [value]="c.id">{{ c.name }}</option>
-        </select>
-      </label>
-      <label>
-        Date/Time
-        <input type="datetime-local" [(ngModel)]="interviewForm.interviewDate" />
-      </label>
-      <label>
-        Location
-        <input type="text" [(ngModel)]="interviewForm.location" />
-      </label>
-      <label>
-        Score (0-20)
-        <input type="number" min="0" max="20" [(ngModel)]="interviewForm.score" />
-      </label>
-      <label>
-        Status
-        <select [(ngModel)]="interviewForm.status">
-          <option *ngFor="let s of interviewStatuses" [ngValue]="s">{{ s }}</option>
-        </select>
-      </label>
-    </div>
-    <div class="crud-actions">
-      <button class="btn btn-primary" (click)="createInterview()">Create</button>
-      <button class="btn btn-ok" (click)="updateInterview()">Update</button>
-      <button class="btn btn-bad" (click)="deleteInterview()">Delete</button>
     </div>
   </section>
 

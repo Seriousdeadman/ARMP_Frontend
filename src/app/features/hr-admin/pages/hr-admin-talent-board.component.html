@@ -1,7 +1,7 @@
 <div class="talent-board">
   <header class="tb-head">
     <h1>Talent Board</h1>
-    <p class="tb-sub">Drag candidates between columns. Status is saved immediately. Hiring from Accepted opens the panel.</p>
+    <p class="tb-sub">Drag candidates between columns. Status is saved immediately. Hiring from Accepted opens the panel. Use <strong>Track</strong> on Accepted to pin someone to the pipeline panel below; after hire they appear under Assigned.</p>
     <button type="button" class="tb-refresh" (click)="reload()" [disabled]="isLoading">Refresh</button>
   </header>
 
@@ -27,20 +27,119 @@
             <div class="card-dept" *ngIf="c.departmentName">{{ c.departmentName }}</div>
             <div class="score-badge" *ngIf="c.interviewScore != null">{{ c.interviewScore }}/20</div>
           </div>
-          <button type="button" class="card-review" (click)="openReview(c)">Review</button>
+          <div class="kanban-card-actions">
+            <button
+              *ngIf="col.id === 'ACCEPTED'"
+              type="button"
+              class="card-track"
+              [class.card-track--on]="isTrackedAccepted(c.id)"
+              (click)="toggleTrackAccepted(c)">
+              {{ isTrackedAccepted(c.id) ? 'Untrack' : 'Track' }}
+            </button>
+            <button type="button" class="card-review" (click)="openReview(c)">Review</button>
+          </div>
         </article>
         <div *ngIf="col.cards.length === 0" class="kanban-empty">Drop here</div>
       </div>
     </section>
   </div>
+
+  <section class="tb-pipeline" *ngIf="!isLoading">
+    <h2 class="tb-pipeline-title">Pipeline detail</h2>
+
+    <div class="tb-pipeline-block" *ngIf="getTrackedAcceptedRows().length > 0">
+      <h3 class="tb-pipeline-h3">Tracked (Accepted)</h3>
+      <p class="tb-pipeline-hint muted">Interview history and current acceptance; hire removes them from the board and lists them under Assigned.</p>
+      <div class="tb-pipeline-rows">
+        <div class="tb-row" *ngFor="let t of getTrackedAcceptedRows(); trackBy: trackCard">
+          <button type="button" class="tb-row-head" (click)="toggleExpandTracked(t.id)">
+            <span class="tb-row-chevron">{{ expandedTrackedId === t.id ? '▼' : '▶' }}</span>
+            <span class="tb-row-name">{{ t.name }}</span>
+            <span class="tb-row-meta">{{ t.email }}</span>
+            <span class="tb-row-chip" *ngIf="t.departmentName">{{ t.departmentName }}</span>
+            <span class="tb-row-chip tb-row-chip--accent">ACCEPTED</span>
+          </button>
+          <div class="tb-row-body" *ngIf="expandedTrackedId === t.id">
+            <p class="error" *ngIf="interviewLoadErrorById.get(t.id)">{{ interviewLoadErrorById.get(t.id) }}</p>
+            <p class="muted" *ngIf="isInterviewLoading(t.id)">Loading interviews…</p>
+            <ol class="tb-timeline" *ngIf="!isInterviewLoading(t.id) && (interviewsByCandidateId.get(t.id)?.length ?? 0) > 0">
+              <li *ngFor="let ev of interviewsByCandidateId.get(t.id)">
+                <span class="tb-tl-when">{{ formatWhen(ev.interviewDate) }}</span>
+                <span class="tb-tl-what">Interview · {{ ev.status }}</span>
+                <span class="tb-tl-detail">{{ ev.location }}<span *ngIf="ev.score != null"> · score {{ ev.score }}/20</span></span>
+              </li>
+            </ol>
+            <p class="muted" *ngIf="!isInterviewLoading(t.id) && (interviewsByCandidateId.get(t.id)?.length ?? 0) === 0 && !interviewLoadErrorById.get(t.id)">No interviews on file.</p>
+            <div class="tb-timeline-foot">
+              <span class="tb-tl-when">Now</span>
+              <span class="tb-tl-what">Pipeline</span>
+              <span class="tb-tl-detail">Accepted — awaiting hire / grade assignment</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tb-pipeline-block">
+      <h3 class="tb-pipeline-h3">Assigned (affected to staff)</h3>
+      <p class="tb-pipeline-hint muted" *ngIf="assignmentsLoading">Loading…</p>
+      <p class="muted" *ngIf="!assignmentsLoading && assignments.length === 0">No one promoted from recruitment yet.</p>
+      <div class="tb-pipeline-rows" *ngIf="!assignmentsLoading && assignments.length > 0">
+        <div class="tb-row" *ngFor="let a of assignments; trackBy: trackAssignment">
+          <button type="button" class="tb-row-head" (click)="toggleExpandAssignment(a.employeeId)">
+            <span class="tb-row-chevron">{{ expandedAssignmentEmployeeId === a.employeeId ? '▼' : '▶' }}</span>
+            <span class="tb-row-name">{{ a.name }}</span>
+            <span class="tb-row-meta">{{ a.email }}</span>
+            <span class="tb-row-chip" *ngIf="a.departmentName">{{ a.departmentName }}</span>
+            <span class="tb-row-chip">{{ a.gradeName }}</span>
+          </button>
+          <div class="tb-row-body" *ngIf="expandedAssignmentEmployeeId === a.employeeId">
+            <dl class="tb-assign-facts">
+              <div><dt>Employee ID</dt><dd>{{ a.employeeId }}</dd></div>
+              <div><dt>Department</dt><dd>{{ a.departmentName ?? '—' }}</dd></div>
+              <div><dt>Grade</dt><dd>{{ a.gradeName }}</dd></div>
+              <div><dt>Hire date</dt><dd>{{ a.hireDate }}</dd></div>
+              <div><dt>Promoted at</dt><dd>{{ formatWhen(a.promotedAt) }}</dd></div>
+              <div><dt>By</dt><dd>{{ a.promotedByLabel ?? '—' }}</dd></div>
+              <div><dt>Candidate status (record)</dt><dd>{{ a.candidatePipelineStatus }}</dd></div>
+            </dl>
+            <h4 class="tb-timeline-h4">Interviews (chronological)</h4>
+            <ol class="tb-timeline" *ngIf="a.interviews.length > 0">
+              <li *ngFor="let ev of a.interviews">
+                <span class="tb-tl-when">{{ formatWhen(ev.interviewDate) }}</span>
+                <span class="tb-tl-what">Interview · {{ ev.status }}</span>
+                <span class="tb-tl-detail">{{ ev.location }}<span *ngIf="ev.score != null"> · score {{ ev.score }}/20</span></span>
+              </li>
+            </ol>
+            <p class="muted" *ngIf="a.interviews.length === 0">No interviews on file.</p>
+            <div class="tb-timeline-foot">
+              <span class="tb-tl-when">{{ formatWhen(a.promotedAt) }}</span>
+              <span class="tb-tl-what">Assigned</span>
+              <span class="tb-tl-detail">Promoted to employee ({{ a.gradeName }})<span *ngIf="a.promotedByLabel"> by {{ a.promotedByLabel }}</span></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
 </div>
 
 <app-slide-over-panel
   [open]="hirePanelOpen"
-  title="Assign grade for new employee"
+  title="Hire candidate"
   (closed)="skipHire()">
   <ng-container *ngIf="hireCandidate">
     <p class="muted">Promote <strong>{{ hireCandidate.name }}</strong> to an employee record.</p>
+    <label class="field">
+      <span>Department</span>
+      <select [(ngModel)]="selectedDepartmentId">
+        <option [ngValue]="''">Same as application (candidate’s department)</option>
+        <option *ngFor="let d of departments" [ngValue]="d.id">{{ d.name }}</option>
+      </select>
+    </label>
+    <p class="muted" *ngIf="!selectedDepartmentId && hireCandidate.departmentName">
+      Application department: <strong>{{ hireCandidate.departmentName }}</strong>
+    </p>
     <label class="field">
       <span>Grade</span>
       <select [(ngModel)]="selectedGradeId">
@@ -68,8 +167,25 @@
       <div><dt>Status</dt><dd>{{ reviewDetail.status }}</dd></div>
       <div><dt>Email</dt><dd>{{ reviewDetail.email }}</dd></div>
       <div *ngIf="reviewDetail.phone"><dt>Phone</dt><dd>{{ reviewDetail.phone }}</dd></div>
-      <div *ngIf="reviewDetail.department?.name"><dt>Department</dt><dd>{{ reviewDetail.department.name }}</dd></div>
+      <div *ngIf="reviewDetail.department?.name">
+        <dt>Department applied</dt>
+        <dd>{{ reviewDetail.department.name }}</dd>
+      </div>
+      <div *ngIf="reviewRow?.interviewScore != null">
+        <dt>Latest interview score</dt>
+        <dd>{{ reviewRow?.interviewScore }}/20</dd>
+      </div>
     </dl>
+    <section class="review-section" *ngIf="reviewInterviews.length > 0">
+      <h3 class="review-h3">Interviews</h3>
+      <ol class="tb-timeline review-timeline">
+        <li *ngFor="let ev of reviewInterviews">
+          <span class="tb-tl-when">{{ formatWhen(ev.interviewDate) }}</span>
+          <span class="tb-tl-what">{{ ev.status }}</span>
+          <span class="tb-tl-detail">{{ ev.location }}<span *ngIf="ev.score != null"> · score {{ ev.score }}/20</span></span>
+        </li>
+      </ol>
+    </section>
     <section class="review-section" *ngIf="reviewDetail.cv?.skillsAndExperience">
       <h3 class="review-h3">Skills &amp; experience</h3>
       <p class="review-text">{{ reviewDetail.cv?.skillsAndExperience }}</p>
@@ -89,8 +205,16 @@
       </ng-container>
       <p class="muted" *ngIf="!reviewFileMeta && !reviewDetail.cv?.fileName">No CV file on record.</p>
     </section>
-    <p class="review-actions" *ngIf="reviewDetail">
+    <p class="review-actions" *ngIf="reviewDetail && reviewRow">
+      <button
+        *ngIf="reviewRow.status === 'ACCEPTED'"
+        type="button"
+        class="btn-primary"
+        (click)="openHireFromReview()">
+        Hire
+      </button>
       <a
+        *ngIf="reviewRow.status === 'NEW' || reviewRow.status === 'INTERVIEWING'"
         class="btn-primary inline-link"
         [routerLink]="['/app/hr/admin/interviews']"
         [queryParams]="{ candidateId: reviewDetail.id }"

@@ -1,79 +1,67 @@
-<div class="page-container">
-  <header class="page-header">
-    <div class="page-header__icon">💰</div>
-    <div>
-      <h1 class="page-header__title">Payroll Report</h1>
-      <p class="page-header__subtitle">Monthly salary calculation for all active employees.</p>
-    </div>
+<div class="payroll-page">
+  <header class="payroll-head">
+    <h1>Payroll report</h1>
+    <p class="payroll-sub">Monthly salary calculation for all active employees.</p>
   </header>
 
-  <!-- Error -->
-  <div class="alert alert--error" *ngIf="error" role="alert">{{ error }}</div>
+  <p class="error" *ngIf="error" role="alert">{{ error }}</p>
 
-  <!-- Loading -->
-  <div class="loading-state" *ngIf="loading">
-    <div class="spinner"></div>
-    <p>Loading employees…</p>
-  </div>
+  <p class="payroll-loading" *ngIf="loading">Loading employees…</p>
 
-  <!-- Summary cards -->
-  <div class="payroll-summary" *ngIf="!loading && rows.length > 0">
-    <div class="summary-card">
-      <div class="summary-card__label">Total Headcount</div>
-      <div class="summary-card__value">{{ rows.length }}</div>
+  <div class="stats-grid" *ngIf="!loading && rows.length > 0">
+    <div class="stat-card">
+      <div class="stat-label">Total headcount</div>
+      <div class="stat-value">{{ rows.length }}</div>
     </div>
-    <div class="summary-card">
-      <div class="summary-card__label">Total Gross Salaries</div>
-      <div class="summary-card__value">{{ formatCurrency(totalGrossSalary) }}</div>
+    <div class="stat-card">
+      <div class="stat-label">Total gross salaries</div>
+      <div class="stat-value stat-value--sm">{{ formatCurrency(totalGrossSalary) }}</div>
     </div>
-    <div class="summary-card summary-card--deduction">
-      <div class="summary-card__label">Total Deductions</div>
-      <div class="summary-card__value">-{{ formatCurrency(totalDeductions) }}</div>
+    <div class="stat-card stat-card--deduction">
+      <div class="stat-label">Total deductions</div>
+      <div class="stat-value stat-value--deduction stat-value--sm">-{{ formatCurrency(totalDeductions) }}</div>
     </div>
-    <div class="summary-card summary-card--net">
-      <div class="summary-card__label">Total Net Salaries</div>
-      <div class="summary-card__value">{{ formatCurrency(totalNetSalary) }}</div>
+    <div class="stat-card stat-card--net">
+      <div class="stat-label">Total net salaries</div>
+      <div class="stat-value stat-value--net stat-value--sm">{{ formatCurrency(totalNetSalary) }}</div>
     </div>
   </div>
 
-  <!-- Empty state -->
-  <div class="empty-state" *ngIf="!loading && rows.length === 0">
-    <div class="empty-state__icon">👥</div>
-    <h3>No employees found</h3>
-    <p>Add employees to generate payroll.</p>
-  </div>
+  <p class="muted payroll-empty" *ngIf="!loading && rows.length === 0">
+    No employees found. Add employees to generate payroll.
+  </p>
 
-  <!-- Table -->
-  <div class="table-card" *ngIf="!loading && rows.length > 0">
-    <div class="table-scroll">
+  <section class="panel payroll-panel" *ngIf="!loading && rows.length > 0">
+    <div class="table-wrap">
       <table class="data-table">
         <thead>
           <tr>
             <th>Employee</th>
             <th>Grade</th>
-            <th>Leave Balance</th>
-            <th>Base Salary</th>
-            <th>Daily Rate</th>
+            <th>Leave balance</th>
+            <th>Base salary</th>
+            <th>Daily rate</th>
             <th>Deduction</th>
-            <th>Net Salary</th>
+            <th>Net salary</th>
           </tr>
         </thead>
         <tbody>
           <tr *ngFor="let row of rows"
-              [class.row--deduction]="hasDeduction(row)"
-              class="table-row">
-            <td class="cell-primary">
+              [class.row--deduction]="hasDeduction(row)">
+            <td>
               <div class="employee-info">
-                <div class="avatar">{{ row.employee.name.charAt(0) }}</div>
+                <div class="pay-avatar" aria-hidden="true">{{ row.employee.name.charAt(0) }}</div>
                 <div>
-                  <div class="employee-info__name">{{ row.employee.name }}</div>
-                  <div class="employee-info__email">{{ row.employee.department?.name }}</div>
+                  <div class="cell-main">{{ row.employee.name }}</div>
+                  <div class="cell-sub">{{ row.employee.department?.name }}</div>
                 </div>
               </div>
             </td>
             <td>{{ row.employee.grade?.name ?? '—' }}</td>
             <td>
-              <span [class]="(row.employee.leaveBalance ?? 0) < 0 ? 'leave-badge leave-badge--negative' : 'leave-badge'">
+              <span
+                class="leave-badge"
+                [class.leave-badge--negative]="(row.employee.leaveBalance ?? 0) < 0">
                 {{ row.employee.leaveBalance ?? 0 }} days
               </span>
             </td>
@@ -87,7 +75,7 @@
             </td>
             <td class="cell-number cell-deduction">
               <span *ngIf="!row.loading && hasDeduction(row)">-{{ formatCurrency(row.payroll?.deduction) }}</span>
-              <span *ngIf="!row.loading && !hasDeduction(row)" class="muted">0</span>
+              <span *ngIf="!row.loading && !hasDeduction(row)" class="cell-muted">0</span>
               <span *ngIf="row.loading" class="skeleton">—</span>
             </td>
             <td class="cell-number cell-net">
@@ -108,8 +96,8 @@
       </table>
     </div>
 
-    <div class="payroll-legend">
-      <span class="legend-item legend-item--deduction">⚠ Row highlighted = leave balance below 0 (salary deduction applied)</span>
-    </div>
-  </div>
+    <p class="payroll-legend">
+      Rows with a light red background had a salary deduction applied (negative leave balance).
+    </p>
+  </section>
 </div>

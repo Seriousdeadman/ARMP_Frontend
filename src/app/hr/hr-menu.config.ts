@@ -122,7 +122,6 @@ export function filterHrMenu(
       id: 'governance',
       label: 'Governance',
       links: [
-        { label: 'Onboarding Approvals', route: '/app/hr/admin/onboarding' },
         { label: 'Payroll', route: '/app/hr/admin/payroll' },
         { label: 'Grade Management', route: '/app/hr/admin/grades' },
         { label: 'Departments', route: '/app/hr/admin/departments' }

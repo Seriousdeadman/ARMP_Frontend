@@ -62,55 +62,6 @@
   padding: 12px 0;
 }
 
-.table-wrap {
-  overflow-x: auto;
-}
-
-.data-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 13px;
-
-  th {
-    text-align: left;
-    font-weight: 500;
-    color: #666;
-    padding: 10px 12px;
-    border-bottom: 1px solid #e6e4de;
-    font-size: 11px;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-  }
-
-  td {
-    padding: 12px;
-    border-bottom: 1px solid #f0ede6;
-    vertical-align: middle;
-    color: #1a1a18;
-  }
-}
-
-.cell-main {
-  font-weight: 500;
-}
-
-.cell-sub {
-  font-size: 11px;
-  color: #888;
-  margin-top: 2px;
-}
-
-.cell-actions {
-  white-space: nowrap;
-  text-align: right;
-
-  &--split {
-    display: flex;
-    gap: 8px;
-    justify-content: flex-end;
-  }
-}
-
 .status-pill {
   display: inline-block;
   font-size: 10px;

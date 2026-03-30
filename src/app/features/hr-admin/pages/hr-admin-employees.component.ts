@@ -26,7 +26,16 @@ export class HrAdminEmployeesComponent implements OnInit {
   selectedGradeFilter = 'ALL';
   selectedDepartmentFilter = 'ALL';
   selectedId = '';
-  form: EmployeeRequest = { name: '', email: '', hireDate: '', leaveBalance: 21, gradeId: '', departmentId: '', status: 'ACTIVE' };
+  form: EmployeeRequest = {
+    name: '',
+    email: '',
+    hireDate: '',
+    leaveBalance: 21,
+    gradeId: '',
+    departmentId: '',
+    status: 'ACTIVE',
+    grantLogisticsStaffRole: false
+  };
   salaryEmployeeId = '';
   salaryResult: PayrollResult | null = null;
   error: string | null = null;
@@ -72,7 +81,16 @@ export class HrAdminEmployeesComponent implements OnInit {
     this.selectedId = '';
     const user = this.authService.getCurrentUser();
     const defaultStatus = user?.role === UserRole.LOGISTICS_STAFF ? 'PENDING_VALIDATION' : 'ACTIVE';
-    this.form = { name: '', email: '', hireDate: '', leaveBalance: 21, gradeId: '', departmentId: '', status: defaultStatus };
+    this.form = {
+      name: '',
+      email: '',
+      hireDate: '',
+      leaveBalance: 21,
+      gradeId: '',
+      departmentId: '',
+      status: defaultStatus,
+      grantLogisticsStaffRole: false
+    };
     this.error = null;
     this.panelOpen = true;
   }
@@ -86,7 +104,8 @@ export class HrAdminEmployeesComponent implements OnInit {
       leaveBalance: e.leaveBalance,
       gradeId: e.grade.id,
       departmentId: e.department.id,
-      status: e.status
+      status: e.status,
+      grantLogisticsStaffRole: false
     };
     this.error = null;
     this.panelOpen = true;

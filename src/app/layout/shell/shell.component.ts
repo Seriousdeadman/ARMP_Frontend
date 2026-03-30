@@ -8,7 +8,7 @@ import { AuthService } from '../../services/auth.service';
 import { HrService } from '../../services/hr.service';
 import { User, UserRole } from '../../models/user.models';
 import { filterHrMenu, HrMenuBootstrap, HrMenuGroup, isHrWorkspaceUrl } from '../../hr/hr-menu.config';
-import type { LeaveSummaryResponse } from '../../services/hr.service';
+import type { ApplicationStatusResponse, LeaveSummaryResponse } from '../../services/hr.service';
 
 interface NavItem {
   label: string;
@@ -87,7 +87,9 @@ export class ShellComponent implements OnInit {
               return of<LeaveSummaryResponse | null>(null);
             })
           ),
-          app: this.hrService.getApplicationStatus()
+          app: this.hrService.getApplicationStatus().pipe(
+            catchError(() => of<ApplicationStatusResponse | null>(null))
+          )
         }).pipe(
           map(({ leave, app }) => ({
             employeeFound: leave?.employeeFound === true || leave?.pendingValidation === true,

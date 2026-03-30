@@ -247,21 +247,21 @@
             <dl class="payslip-dl">
               <div class="payslip-item">
                 <dt>Base Salary</dt>
-                <dd>{{ payrollResult.baseSalary | number:'1.2-2' }} DZD</dd>
+                <dd>{{ payrollResult.baseSalary | number:'1.2-2' }} TND</dd>
               </div>
               <div class="payslip-item">
                 <dt>Daily Rate (Base/22)</dt>
-                <dd>{{ payrollResult.dailyRate | number:'1.2-2' }} DZD</dd>
+                <dd>{{ payrollResult.dailyRate | number:'1.2-2' }} TND</dd>
               </div>
               <div class="payslip-item payslip-item--deduction" *ngIf="(payrollResult.deduction ?? 0) > 0">
                 <dt>Leave Balance Deduction</dt>
-                <dd>-{{ payrollResult.deduction | number:'1.2-2' }} DZD</dd>
+                <dd>-{{ payrollResult.deduction | number:'1.2-2' }} TND</dd>
               </div>
             </dl>
             
             <div class="payslip-footer">
               <span class="total-label">Estimated Net Salary</span>
-              <span class="total-value">{{ payrollResult.calculatedSalary | number:'1.2-2' }} DZD</span>
+              <span class="total-value">{{ payrollResult.calculatedSalary | number:'1.2-2' }} TND</span>
             </div>
             
             <p class="payslip-note" *ngIf="(payrollResult.deduction ?? 0) > 0">

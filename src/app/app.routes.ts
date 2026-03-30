@@ -165,11 +165,8 @@ export const routes: Routes = [
               },
               {
                 path: 'onboarding',
-                canActivate: [roleGuard],
-                data: { role: UserRole.SUPER_ADMIN },
-                loadComponent: () =>
-                  import('./features/hr-admin/pages/hr-admin-onboarding.component')
-                    .then(m => m.HrAdminOnboardingComponent)
+                redirectTo: 'employees',
+                pathMatch: 'full'
               },
               {
                 path: 'payroll',
