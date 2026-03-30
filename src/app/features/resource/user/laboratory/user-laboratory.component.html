@@ -1,0 +1,91 @@
+<div class="user-page">
+  <div class="hero">
+    <h1>Browse Laboratories</h1>
+    <p>Explore and reserve laboratories for your research and practical sessions.</p>
+  </div>
+
+  <div class="toolbar">
+    <input class="search-input" type="text" placeholder="Search by name or building..." [(ngModel)]="searchQuery" (ngModelChange)="applyFilters()"/>
+    <select class="filter-select" [(ngModel)]="filterType" (ngModelChange)="applyFilters()">
+      <option value="ALL">All types</option>
+      <option *ngFor="let t of labTypes" [value]="t">{{ t.replace('_', ' ') }}</option>
+    </select>
+    <select class="filter-select" [(ngModel)]="sortBy" (ngModelChange)="applyFilters()">
+      <option value="name">Sort: Name</option>
+      <option value="capacity">Sort: Capacity</option>
+    </select>
+    <div class="avail-pill" [class.active]="availOnly" (click)="toggleAvail()">Available only</div>
+    <span class="result-count">{{ filtered.length }} lab{{ filtered.length !== 1 ? 's' : '' }}</span>
+  </div>
+
+  <div class="loading-state" *ngIf="isLoading">Loading laboratories...</div>
+
+  <div class="cards-grid" *ngIf="!isLoading">
+    <div class="resource-card" *ngFor="let lab of filtered">
+      <div class="card-top-strip" [class.available]="lab.status === 'AVAILABLE'" [class.unavailable]="lab.status !== 'AVAILABLE'"></div>
+      <div class="card-body">
+        <div class="card-header">
+          <div class="card-name">{{ lab.name }}</div>
+          <span class="status-badge" [class.available]="lab.status === 'AVAILABLE'" [class.unavailable]="lab.status !== 'AVAILABLE'">
+            <div class="status-dot" [class.green]="lab.status === 'AVAILABLE'" [class.red]="lab.status !== 'AVAILABLE'"></div>
+            {{ lab.status }}
+          </span>
+        </div>
+        <div class="card-location">{{ lab.building }} · Room {{ lab.roomNumber }}</div>
+        <div class="card-info">
+          <div><div class="info-label">Type</div><div class="info-value">{{ lab.labType.replace('_', ' ') }}</div></div>
+          <div>
+            <div class="info-label">Capacity</div>
+            <div class="info-value">{{ lab.capacity }} seats</div>
+            <div class="cap-bar"><div class="cap-fill" [style.width.%]="capPct(lab)"></div></div>
+          </div>
+        </div>
+        <div class="card-actions">
+          <button class="btn-details" (click)="openDetail(lab)">Details</button>
+          <button class="btn-reserve" [disabled]="lab.status !== 'AVAILABLE'" (click)="openReserve(lab)">
+            {{ lab.status === 'AVAILABLE' ? 'Reserve' : 'Unavailable' }}
+          </button>
+        </div>
+      </div>
+    </div>
+    <div class="empty-state" *ngIf="filtered.length === 0">No laboratories match your search.</div>
+  </div>
+
+  <div class="modal-overlay" *ngIf="showDetailModal" (click)="closeModals()">
+    <div class="modal-box" (click)="$event.stopPropagation()">
+      <div class="modal-title">{{ selectedLab?.name }}</div>
+      <div class="modal-subtitle">{{ selectedLab?.building }} · Room {{ selectedLab?.roomNumber }}</div>
+      <div class="modal-divider"></div>
+      <div class="detail-row"><span class="detail-key">Type</span><span class="detail-val">{{ selectedLab?.labType?.replace('_', ' ') }}</span></div>
+      <div class="detail-row"><span class="detail-key">Capacity</span><span class="detail-val">{{ selectedLab?.capacity }} seats</span></div>
+      <div class="detail-row"><span class="detail-key">Building</span><span class="detail-val">{{ selectedLab?.building }}</span></div>
+      <div class="detail-row"><span class="detail-key">Room number</span><span class="detail-val">{{ selectedLab?.roomNumber }}</span></div>
+      <div class="detail-row">
+        <span class="detail-key">Status</span>
+        <span class="detail-val" [style.color]="selectedLab?.status === 'AVAILABLE' ? '#00d4aa' : '#ff4757'">{{ selectedLab?.status }}</span>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-modal-cancel" (click)="closeModals()">Close</button>
+        <button class="btn-modal-confirm" *ngIf="selectedLab?.status === 'AVAILABLE'" (click)="openReserve(selectedLab!)">Reserve this lab</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" *ngIf="showReserveModal" (click)="closeModals()">
+    <div class="modal-box" (click)="$event.stopPropagation()">
+      <div class="modal-title">Reserve {{ selectedLab?.name }}</div>
+      <div class="modal-subtitle">{{ selectedLab?.building }} · {{ selectedLab?.labType?.replace('_', ' ') }} · {{ selectedLab?.capacity }} seats</div>
+      <div class="modal-divider"></div>
+      <div class="form-row">
+        <div class="form-group"><label>Start date & time</label><input type="datetime-local" [(ngModel)]="startDatetime"/></div>
+        <div class="form-group"><label>End date & time</label><input type="datetime-local" [(ngModel)]="endDatetime"/></div>
+      </div>
+      <div class="error-msg" *ngIf="reserveError">{{ reserveError }}</div>
+      <div class="success-msg" *ngIf="reserveSuccess"><div class="success-title">Reservation confirmed!</div><div class="success-sub">{{ reserveSuccess }}</div></div>
+      <div class="modal-actions" *ngIf="!reserveSuccess">
+        <button class="btn-modal-cancel" (click)="closeModals()">Cancel</button>
+        <button class="btn-modal-confirm" [disabled]="isSubmitting" (click)="confirmReservation()">{{ isSubmitting ? 'Reserving...' : 'Confirm reservation' }}</button>
+      </div>
+    </div>
+  </div>
+</div>

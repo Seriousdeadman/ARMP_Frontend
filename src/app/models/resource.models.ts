@@ -78,3 +78,33 @@ export interface Equipment {
   createdAt: string;
   updatedAt: string;
 }
+export enum ReservationStatus {
+  ACTIVE = 'ACTIVE',
+  CANCELLED = 'CANCELLED'
+}
+
+export enum ResourceType {
+  CLASSROOM = 'CLASSROOM',
+  LABORATORY = 'LABORATORY',
+  COLLABORATIVE_SPACE = 'COLLABORATIVE_SPACE',
+  EQUIPMENT = 'EQUIPMENT'
+}
+
+export interface ReservationRequest {
+  resourceType: ResourceType;
+  resourceId: number;
+  startDatetime: string;
+  endDatetime: string;
+}
+
+export interface ReservationResponse {
+  id: number;
+  userId: string;
+  resourceType: ResourceType;
+  resourceId: number;
+  resourceName: string;
+  startDatetime: string;
+  endDatetime: string;
+  status: ReservationStatus;
+  createdAt: string;
+}

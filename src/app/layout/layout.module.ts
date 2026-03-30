@@ -10,6 +10,11 @@ import { ClassroomComponent } from '../features/resource/classroom/classroom.com
 import { LaboratoryComponent } from '../features/resource/laboratory/laboratory.component';
 import { CollaborativeSpaceComponent } from '../features/resource/collaborative-space/collaborative-space.component';
 import { EquipmentComponent } from '../features/resource/equipment/equipment.component';
+import { UserClassroomComponent } from '../features/resource/user/classroom/user-classroom.component';
+import { UserCollaborativeSpaceComponent } from '../features/resource/user/collaborative-space/user-collaborative-space.component';
+import { UserEquipmentComponent } from '../features/resource/user/equipement/user-equipment.component';
+import { UserLaboratoryComponent } from '../features/resource/user/laboratory/user-laboratory.component';
+import { MyReservationsComponent } from '../features/resource/user/my-reservations/my-reservations.component.ts';
 
 const routes: Routes = [
   {
@@ -49,9 +54,14 @@ const routes: Routes = [
           import('../features/admin/admin.module')
             .then(m => m.AdminModule)
       },
+      { path: 'browse/classrooms', component: UserClassroomComponent },
+      { path: 'browse/laboratories', component: UserLaboratoryComponent },
+      { path: 'browse/collaborative-spaces', component: UserCollaborativeSpaceComponent },
+      { path: 'browse/equipment', component: UserEquipmentComponent },
       { path: 'classrooms', component: ClassroomComponent },
       { path: 'laboratories', component: LaboratoryComponent },
       { path: 'collaborative-spaces', component: CollaborativeSpaceComponent },
+      { path: 'my-reservations', component: MyReservationsComponent },
       { path: 'equipment', component: EquipmentComponent }
     ]
   }
@@ -63,7 +73,12 @@ const routes: Routes = [
     ClassroomComponent,
     LaboratoryComponent,
     CollaborativeSpaceComponent,
-    EquipmentComponent
+    EquipmentComponent,
+   UserClassroomComponent,
+UserLaboratoryComponent,
+UserCollaborativeSpaceComponent,
+UserEquipmentComponent,
+MyReservationsComponent
   ],
   imports: [
     CommonModule,

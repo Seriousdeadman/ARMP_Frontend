@@ -9,6 +9,7 @@ import { filter, Subscription } from 'rxjs';
 interface NavItem {
   label: string;
   route: string;
+  group: string;
   roles?: UserRole[];
 }
 
@@ -23,19 +24,28 @@ export class ShellComponent implements OnInit, OnDestroy {
   sidebarOpen = false;
   private routerSubscription: Subscription | null = null;
 
+  // ✅ GROUPS
+  groups = ['Overview', 'Browse', 'Resources', 'Account'];
+
+  // ✅ NAV ITEMS WITH GROUPS
   navItems: NavItem[] = [
-    { label: 'Dashboard', route: '/app/dashboard' },
-    { label: 'Admin', route: '/app/admin', roles: [UserRole.SUPER_ADMIN] },
-    { label: 'Classrooms', route: '/app/classrooms' },
-    { label: 'Laboratories', route: '/app/laboratories' },
-    { label: 'Collaborative Spaces', route: '/app/collaborative-spaces' },
-    { label: 'Equipment', route: '/app/equipment' },
+    { label: 'Dashboard', route: '/app/dashboard', group: 'Overview' },
+
+    { label: 'Admin', route: '/app/admin', group: 'Overview', roles: [UserRole.SUPER_ADMIN] },
+
+    // ✅ Browse group (your new structure)
+    { label: 'Classrooms', route: '/app/browse/classrooms', group: 'Browse' },
+    { label: 'Laboratories', route: '/app/browse/laboratories', group: 'Browse' },
+    { label: 'Collab Spaces', route: '/app/browse/collaborative-spaces', group: 'Browse' },
+    { label: 'Equipment', route: '/app/browse/equipment', group: 'Browse' },
+    { label: 'My Reservations', route: '/app/my-reservations', group: 'Browse' },
   ];
 
+  // ✅ Account group items
   accountItems: NavItem[] = [
-    { label: 'Profile', route: '/app/profile' },
-    { label: 'Activity', route: '/app/activity' },
-    { label: 'Settings', route: '/app/settings' }
+    { label: 'Profile', route: '/app/profile', group: 'Account' },
+    { label: 'Activity', route: '/app/activity', group: 'Account' },
+    { label: 'Settings', route: '/app/settings', group: 'Account' }
   ];
 
   constructor(
@@ -76,12 +86,18 @@ export class ShellComponent implements OnInit, OnDestroy {
     return parts[2] || 'unknown';
   }
 
+  // ✅ Filter by role
   getVisibleNavItems(): NavItem[] {
     return this.navItems.filter(item => {
       if (!item.roles) return true;
       if (!this.currentUser) return false;
       return item.roles.includes(this.currentUser.role);
     });
+  }
+
+  // ✅ NEW: Get items by group (VERY IMPORTANT for HTML)
+  getItemsByGroup(group: string): NavItem[] {
+    return this.getVisibleNavItems().filter(item => item.group === group);
   }
 
   getUserInitials(): string {

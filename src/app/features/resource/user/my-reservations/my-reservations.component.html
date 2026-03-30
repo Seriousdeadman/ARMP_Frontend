@@ -1,0 +1,134 @@
+<div class="user-page">
+  <div class="hero">
+    <h1>My Reservations</h1>
+    <p>Track and manage all your resource bookings in one place.</p>
+  </div>
+
+  <!-- Stats -->
+  <div class="res-stats" *ngIf="!isLoading">
+    <div class="res-stat">
+      <div class="res-stat-label">Total</div>
+      <div class="res-stat-value">{{ totalCount }}</div>
+    </div>
+    <div class="res-stat">
+      <div class="res-stat-label">Active</div>
+      <div class="res-stat-value" style="color:#00d4aa">{{ activeCount }}</div>
+    </div>
+    <div class="res-stat">
+      <div class="res-stat-label">Cancelled</div>
+      <div class="res-stat-value" style="color:#ff4757">{{ cancelledCount }}</div>
+    </div>
+  </div>
+
+  <!-- Toolbar -->
+  <div class="toolbar" *ngIf="!isLoading">
+    <input
+      class="search-input"
+      type="text"
+      placeholder="Search by resource name..."
+      [(ngModel)]="searchQuery"
+      (ngModelChange)="applyFilters()"
+    />
+    <select class="filter-select" [(ngModel)]="filterType" (ngModelChange)="applyFilters()">
+      <option value="ALL">All types</option>
+      <option *ngFor="let t of resourceTypes" [value]="t">{{ t.replace('_', ' ') }}</option>
+    </select>
+    <select class="filter-select" [(ngModel)]="filterStatus" (ngModelChange)="applyFilters()">
+      <option value="ALL">All statuses</option>
+      <option *ngFor="let s of statusOptions" [value]="s">{{ s }}</option>
+    </select>
+    <select class="filter-select" [(ngModel)]="sortBy" (ngModelChange)="applyFilters()">
+      <option value="upcoming">Upcoming first</option>
+      <option value="latest">Latest created</option>
+    </select>
+    <span class="result-count">{{ filtered.length }} reservation{{ filtered.length !== 1 ? 's' : '' }}</span>
+  </div>
+
+  <!-- Loading -->
+  <div class="loading-state" *ngIf="isLoading">Loading your reservations...</div>
+
+  <!-- Cards Grid -->
+  <div class="cards-grid" *ngIf="!isLoading">
+    <div
+      class="res-card"
+      [class.res-card-cancelled]="r.status === 'CANCELLED'"
+      *ngFor="let r of filtered"
+    >
+      <div class="card-top-strip"
+        [class.available]="r.status === 'ACTIVE'"
+        [class.unavailable]="r.status === 'CANCELLED'">
+      </div>
+      <div class="card-body">
+
+        <!-- Header -->
+        <div class="card-header">
+          <div class="card-name">{{ r.resourceName }}</div>
+          <span class="status-badge"
+            [class.available]="r.status === 'ACTIVE'"
+            [class.unavailable]="r.status === 'CANCELLED'">
+            <div class="status-dot"
+              [class.green]="r.status === 'ACTIVE'"
+              [class.red]="r.status === 'CANCELLED'">
+            </div>
+            {{ r.status }}
+          </span>
+        </div>
+
+        <!-- Resource type -->
+        <div class="res-type-row">
+          Resource type
+          <span class="res-type-val">{{ r.resourceType.replace('_', ' ') }}</span>
+        </div>
+
+        <!-- Time block -->
+        <div class="time-block">
+          <div class="time-row">
+            <span class="time-label">From</span>
+            <span class="time-val">{{ formatDateTime(r.startDatetime) }}</span>
+          </div>
+          <div class="time-divider"></div>
+          <div class="time-row">
+            <span class="time-label">To</span>
+            <span class="time-val">{{ formatDateTime(r.endDatetime) }}</span>
+          </div>
+          <div class="res-duration">Duration: {{ getDuration(r.startDatetime, r.endDatetime) }}</div>
+        </div>
+
+        <!-- Reserved on -->
+        <div class="res-created">Reserved on {{ formatDate(r.createdAt) }}</div>
+
+        <!-- Cancel button -->
+        <div *ngIf="r.status === 'ACTIVE'">
+          <button class="btn-cancel-res" (click)="askCancel(r.id)">
+            Cancel reservation
+          </button>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="empty-state" *ngIf="filtered.length === 0">
+      No reservations found.
+    </div>
+  </div>
+
+  <!-- Cancel Confirmation Modal -->
+  <div class="modal-overlay" *ngIf="confirmCancelId !== null" (click)="dismissCancel()">
+    <div class="modal-box" (click)="$event.stopPropagation()">
+      <div class="modal-title">Cancel reservation?</div>
+      <div class="modal-subtitle">
+        Are you sure you want to cancel the reservation for
+        <strong style="color:#f0f4ff">{{ getResourceBeingCancelled()?.resourceName }}</strong>?
+        This cannot be undone.
+      </div>
+      <div class="modal-divider"></div>
+      <div class="modal-actions">
+        <button class="btn-modal-cancel" (click)="dismissCancel()">Keep it</button>
+        <button class="btn-cancel-confirm" [disabled]="isCancelling" (click)="confirmCancel()">
+          {{ isCancelling ? 'Cancelling...' : 'Yes, cancel' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+</div>

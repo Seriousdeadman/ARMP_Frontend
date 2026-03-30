@@ -1,0 +1,82 @@
+<div class="user-page">
+  <div class="hero">
+    <h1>Equipment</h1>
+    <p>Browse and reserve shared equipment for your academic activities.</p>
+  </div>
+
+  <div class="toolbar">
+    <input class="search-input" type="text" placeholder="Search by name or brand..." [(ngModel)]="searchQuery" (ngModelChange)="applyFilters()"/>
+    <select class="filter-select" [(ngModel)]="filterType" (ngModelChange)="applyFilters()">
+      <option value="ALL">All types</option>
+      <option *ngFor="let t of equipmentTypes" [value]="t">{{ t.replace('_', ' ') }}</option>
+    </select>
+    <div class="avail-pill" [class.active]="availOnly" (click)="toggleAvail()">Available only</div>
+    <span class="result-count">{{ filtered.length }} item{{ filtered.length !== 1 ? 's' : '' }}</span>
+  </div>
+
+  <div class="loading-state" *ngIf="isLoading">Loading equipment...</div>
+
+  <div class="cards-grid" *ngIf="!isLoading">
+    <div class="resource-card" *ngFor="let item of equipmentList">
+      <div class="card-top-strip" [class.available]="item.status === 'AVAILABLE'" [class.unavailable]="item.status !== 'AVAILABLE'"></div>
+      <div class="card-body">
+        <div class="card-header">
+          <div class="card-name">{{ item.name }}</div>
+          <span class="status-badge" [class.available]="item.status === 'AVAILABLE'" [class.unavailable]="item.status !== 'AVAILABLE'">
+            <div class="status-dot" [class.green]="item.status === 'AVAILABLE'" [class.red]="item.status !== 'AVAILABLE'"></div>
+            {{ item.status }}
+          </span>
+        </div>
+        <div class="card-location">{{ item.brand }} · {{ item.model }}</div>
+        <div class="card-info">
+          <div><div class="info-label">Type</div><div class="info-value">{{ item.equipmentType.replace('_', ' ') }}</div></div>
+          <div><div class="info-label">Brand</div><div class="info-value">{{ item.brand }}</div></div>
+        </div>
+        <div class="card-actions">
+          <button class="btn-details" (click)="openDetail(item)">Details</button>
+          <button class="btn-reserve" [disabled]="item.status !== 'AVAILABLE'" (click)="openReserve(item)">
+            {{ item.status === 'AVAILABLE' ? 'Reserve' : 'Unavailable' }}
+          </button>
+        </div>
+      </div>
+    </div>
+    <div class="empty-state" *ngIf="filtered.length === 0">No equipment matches your search.</div>
+  </div>
+
+  <div class="modal-overlay" *ngIf="showDetailModal" (click)="closeModals()">
+    <div class="modal-box" (click)="$event.stopPropagation()">
+      <div class="modal-title">{{ selectedItem?.name }}</div>
+      <div class="modal-subtitle">{{ selectedItem?.brand }} · {{ selectedItem?.model }}</div>
+      <div class="modal-divider"></div>
+      <div class="detail-row"><span class="detail-key">Type</span><span class="detail-val">{{ selectedItem?.equipmentType?.replace('_', ' ') }}</span></div>
+      <div class="detail-row"><span class="detail-key">Brand</span><span class="detail-val">{{ selectedItem?.brand }}</span></div>
+      <div class="detail-row"><span class="detail-key">Model</span><span class="detail-val">{{ selectedItem?.model }}</span></div>
+      <div class="detail-row">
+        <span class="detail-key">Status</span>
+        <span class="detail-val" [style.color]="selectedItem?.status === 'AVAILABLE' ? '#00d4aa' : '#ff4757'">{{ selectedItem?.status }}</span>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-modal-cancel" (click)="closeModals()">Close</button>
+        <button class="btn-modal-confirm" *ngIf="selectedItem?.status === 'AVAILABLE'" (click)="openReserve(selectedItem!)">Reserve this item</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" *ngIf="showReserveModal" (click)="closeModals()">
+    <div class="modal-box" (click)="$event.stopPropagation()">
+      <div class="modal-title">Reserve {{ selectedItem?.name }}</div>
+      <div class="modal-subtitle">{{ selectedItem?.brand }} · {{ selectedItem?.equipmentType?.replace('_', ' ') }}</div>
+      <div class="modal-divider"></div>
+      <div class="form-row">
+        <div class="form-group"><label>Start date & time</label><input type="datetime-local" [(ngModel)]="startDatetime"/></div>
+        <div class="form-group"><label>End date & time</label><input type="datetime-local" [(ngModel)]="endDatetime"/></div>
+      </div>
+      <div class="error-msg" *ngIf="reserveError">{{ reserveError }}</div>
+      <div class="success-msg" *ngIf="reserveSuccess"><div class="success-title">Reservation confirmed!</div><div class="success-sub">{{ reserveSuccess }}</div></div>
+      <div class="modal-actions" *ngIf="!reserveSuccess">
+        <button class="btn-modal-cancel" (click)="closeModals()">Cancel</button>
+        <button class="btn-modal-confirm" [disabled]="isSubmitting" (click)="confirmReservation()">{{ isSubmitting ? 'Reserving...' : 'Confirm reservation' }}</button>
+      </div>
+    </div>
+  </div>
+</div>
