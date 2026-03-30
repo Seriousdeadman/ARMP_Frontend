@@ -89,3 +89,12 @@
     </div>
   </div>
 </div>
+<!-- Add this at the bottom of each user-*.component.html file -->
+<app-conflict-resolver
+  *ngIf="showConflictResolver"
+  [originalRequest]="pendingRequest"
+  [alternatives]="pendingAlternatives"
+  (resolved)="onConflictResolved($event)"
+  (cancelled)="onConflictCancelled()"
+  (tryDifferentTime)="onTryDifferentTime()">
+</app-conflict-resolver>

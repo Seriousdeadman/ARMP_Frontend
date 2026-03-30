@@ -93,8 +93,8 @@ export enum ResourceType {
 export interface ReservationRequest {
   resourceType: ResourceType;
   resourceId: number;
-  startDatetime: string;
-  endDatetime: string;
+  startDatetime: string; 
+  endDatetime: string;   
 }
 
 export interface ReservationResponse {
@@ -105,7 +105,7 @@ export interface ReservationResponse {
   resourceName: string;
   startDatetime: string;
   endDatetime: string;
-  status: ReservationStatus;
+  status: string;
   createdAt: string;
 }
 export interface ResourceSuggestionRequest {

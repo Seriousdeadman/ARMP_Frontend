@@ -1,0 +1,483 @@
+// frontend/src/app/features/reservation/conflict-resolver/conflict-resolver.component.scss
+.conflict-resolver {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 90%;
+  max-width: 900px;
+  max-height: 90vh;
+  overflow-y: auto;
+  background: white;
+  border-radius: 24px;
+  box-shadow: 0 20px 35px -10px rgba(0, 0, 0, 0.3);
+  z-index: 2000;
+  animation: slideUp 0.3s ease-out;
+  
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
+  
+  &::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+  }
+  
+  &::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 4px;
+    
+    &:hover {
+      background: #a8a8a8;
+    }
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -40%);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%);
+  }
+}
+
+// Header Styles
+.conflict-header {
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  padding: 1.75rem;
+  text-align: center;
+  border-bottom: 1px solid #fcd34d;
+  
+  .conflict-icon {
+    font-size: 3rem;
+    margin-bottom: 0.75rem;
+  }
+  
+  h2 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #92400e;
+    margin-bottom: 0.5rem;
+  }
+  
+  p {
+    color: #b45309;
+    font-size: 0.9rem;
+  }
+}
+
+// Section Header
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  
+  .section-icon {
+    font-size: 1.25rem;
+  }
+  
+  h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #1f2937;
+    margin: 0;
+  }
+  
+  .section-description {
+    font-size: 0.8rem;
+    color: #6b7280;
+    margin: 0.25rem 0 0 0;
+  }
+}
+
+// Original Booking Card
+.original-booking {
+  background: #fef9e8;
+  border-left: 4px solid #f59e0b;
+  margin: 1.5rem;
+  padding: 1rem 1.25rem;
+  border-radius: 12px;
+  
+  .booking-details {
+    .detail-row {
+      display: flex;
+      margin-bottom: 0.5rem;
+      font-size: 0.85rem;
+      
+      .detail-label {
+        width: 70px;
+        font-weight: 600;
+        color: #92400e;
+      }
+      
+      .detail-value {
+        color: #1f2937;
+        flex: 1;
+      }
+    }
+  }
+}
+
+// Loading State
+.loading-state {
+  padding: 3rem;
+  text-align: center;
+  
+  .spinner {
+    width: 48px;
+    height: 48px;
+    border: 3px solid #e5e7eb;
+    border-top-color: #10b981;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto 1rem;
+  }
+  
+  p {
+    color: #6b7280;
+    font-size: 0.9rem;
+  }
+  
+  .loading-subtitle {
+    font-size: 0.75rem;
+    color: #9ca3af;
+    margin-top: 0.5rem;
+  }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+// Alternatives Section
+.alternatives-section {
+  padding: 0 1.5rem 1.5rem 1.5rem;
+}
+
+// Alternatives Grid
+.alternatives-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1.25rem;
+  margin: 1.25rem 0;
+}
+
+// Alternative Card
+.alternative-card {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  padding: 1.25rem;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  position: relative;
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+    border-color: #10b981;
+  }
+  
+  &.selected {
+    border: 2px solid #10b981;
+    background: #f0fdf4;
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+  }
+}
+
+// Score Badge
+.card-score {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  text-align: center;
+  padding: 0.25rem 0.5rem;
+  border-radius: 8px;
+  min-width: 55px;
+  
+  .score-value {
+    font-size: 1.1rem;
+    font-weight: 700;
+    display: block;
+    line-height: 1.2;
+  }
+  
+  .score-label {
+    font-size: 0.6rem;
+    font-weight: 500;
+  }
+  
+  &.excellent {
+    background: #d1fae5;
+    .score-value { color: #065f46; }
+    .score-label { color: #065f46; }
+  }
+  
+  &.good {
+    background: #fef3c7;
+    .score-value { color: #92400e; }
+    .score-label { color: #92400e; }
+  }
+  
+  &.fair {
+    background: #fed7aa;
+    .score-value { color: #9a3412; }
+    .score-label { color: #9a3412; }
+  }
+  
+  &.poor {
+    background: #fee2e2;
+    .score-value { color: #991b1b; }
+    .score-label { color: #991b1b; }
+  }
+}
+
+// Change Type Badge
+.change-type-badge {
+  display: inline-block;
+  padding: 0.2rem 0.6rem;
+  border-radius: 20px;
+  font-size: 0.7rem;
+  font-weight: 500;
+  margin-bottom: 0.75rem;
+  
+  &.same_time {
+    background: #dbeafe;
+    color: #1e40af;
+  }
+  
+  &.time_shift {
+    background: #fed7aa;
+    color: #9a3412;
+  }
+  
+  &.alternative_type {
+    background: #ddd6fe;
+    color: #5b21b6;
+  }
+  
+  &.default {
+    background: #f3f4f6;
+    color: #374151;
+  }
+}
+
+// Resource Name
+.resource-name {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #1f2937;
+  margin: 0 0 0.75rem 0;
+}
+
+// Resource Details
+.resource-details {
+  margin-bottom: 0.75rem;
+  
+  .detail {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.75rem;
+    color: #4b5563;
+    margin-bottom: 0.4rem;
+    
+    .detail-icon {
+      width: 20px;
+      font-size: 0.8rem;
+    }
+  }
+  
+  .duration {
+    color: #10b981;
+    font-weight: 500;
+  }
+}
+
+// Reason Box
+.reason-box {
+  background: #f3f4f6;
+  border-radius: 8px;
+  padding: 0.5rem;
+  margin: 0.75rem 0;
+  display: flex;
+  gap: 0.5rem;
+  font-size: 0.7rem;
+  
+  .reason-icon {
+    font-size: 0.8rem;
+  }
+  
+  .reason-text {
+    color: #4b5563;
+    flex: 1;
+  }
+}
+
+// Shift Box
+.shift-box {
+  background: #fef3c7;
+  border-radius: 8px;
+  padding: 0.5rem;
+  margin: 0.75rem 0;
+  display: flex;
+  gap: 0.5rem;
+  font-size: 0.7rem;
+  
+  .shift-icon {
+    font-size: 0.8rem;
+  }
+  
+  .shift-text {
+    color: #92400e;
+    flex: 1;
+    font-weight: 500;
+  }
+}
+
+// Select Button
+.btn-select {
+  width: 100%;
+  padding: 0.6rem;
+  border: 1px solid #e5e7eb;
+  background: white;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: #4b5563;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-top: 0.5rem;
+  
+  &:hover {
+    background: #f9fafb;
+    border-color: #10b981;
+  }
+  
+  &.selected {
+    background: #10b981;
+    border-color: #10b981;
+    color: white;
+  }
+}
+
+// No Alternatives
+.no-alternatives {
+  text-align: center;
+  padding: 2rem;
+  background: #f9fafb;
+  border-radius: 16px;
+  grid-column: 1 / -1;
+  
+  .no-alternatives-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+  }
+  
+  h4 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 0.5rem;
+  }
+  
+  p {
+    font-size: 0.85rem;
+    color: #6b7280;
+    margin-bottom: 1rem;
+  }
+  
+  ul {
+    list-style: none;
+    padding: 0;
+    
+    li {
+      display: inline-block;
+      background: white;
+      padding: 0.25rem 0.75rem;
+      border-radius: 20px;
+      font-size: 0.7rem;
+      color: #10b981;
+      margin: 0.25rem;
+      border: 1px solid #e5e7eb;
+    }
+  }
+}
+
+// Action Buttons
+.action-buttons {
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e5e7eb;
+  
+  button {
+    padding: 0.6rem 1.25rem;
+    border-radius: 10px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  
+  .btn-outline {
+    background: white;
+    border: 1px solid #e5e7eb;
+    color: #4b5563;
+    
+    &:hover {
+      background: #f9fafb;
+      border-color: #d1d5db;
+    }
+  }
+  
+  .btn-primary {
+    background: #10b981;
+    border: none;
+    color: white;
+    
+    &:hover:not(:disabled) {
+      background: #059669;
+      transform: translateY(-1px);
+    }
+    
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  }
+}
+
+// Responsive
+@media (max-width: 640px) {
+  .conflict-resolver {
+    width: 95%;
+    max-height: 95vh;
+  }
+  
+  .alternatives-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .action-buttons {
+    flex-direction: column;
+    
+    button {
+      width: 100%;
+    }
+  }
+  
+  .original-booking {
+    margin: 1rem;
+  }
+  
+  .alternatives-section {
+    padding: 0 1rem 1rem 1rem;
+  }
+}

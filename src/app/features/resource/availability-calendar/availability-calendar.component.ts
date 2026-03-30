@@ -135,8 +135,15 @@ export class AvailabilityCalendarComponent implements OnInit, OnDestroy, AfterVi
   
   onResourceSelect(): void {
     if (this.selectedResourceId) {
+      this.selectedResourceName = this.getResourceName();
       this.loadCalendarEvents();
     }
+  }
+  
+  getResourceName(): string {
+    const resources = this.getCurrentResources();
+    const found = resources.find(r => r.id === this.selectedResourceId);
+    return found ? found.name : 'Selected Resource';
   }
   
   getCurrentResources(): any[] {
@@ -154,6 +161,27 @@ export class AvailabilityCalendarComponent implements OnInit, OnDestroy, AfterVi
     }
   }
   
+  // SIMPLE FIX: Helper method to format date without timezone conversion
+  formatLocalDateForAPI(date: Date): string {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    const seconds = String(date.getSeconds()).padStart(2, '0');
+    return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
+  }
+  
+  // SIMPLE FIX: Format for datetime-local input (keeps local time)
+  formatForInput(date: Date): string {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
+  }
+  
   loadCalendarEvents(): void {
     if (!this.selectedResourceId) return;
     
@@ -162,8 +190,8 @@ export class AvailabilityCalendarComponent implements OnInit, OnDestroy, AfterVi
     if (!calendarApi) return;
     
     const view = calendarApi.view;
-    const start = view.activeStart.toISOString();
-    const end = view.activeEnd.toISOString();
+    const start = this.formatLocalDateForAPI(view.activeStart);
+    const end = this.formatLocalDateForAPI(view.activeEnd);
     
     this.isLoading = true;
     
@@ -174,11 +202,12 @@ export class AvailabilityCalendarComponent implements OnInit, OnDestroy, AfterVi
       end: end
     }).subscribe({
       next: (slots) => {
+        // Convert backend dates back to local Date objects for FullCalendar
         this.calendarEvents = slots.map(slot => ({
           id: slot.id.toString(),
           title: slot.title,
-          start: slot.start,
-          end: slot.end,
+          start: this.parseBackendDate(slot.start),
+          end: this.parseBackendDate(slot.end),
           backgroundColor: slot.color,
           borderColor: slot.color,
           extendedProps: {
@@ -204,6 +233,26 @@ export class AvailabilityCalendarComponent implements OnInit, OnDestroy, AfterVi
     });
   }
   
+  // SIMPLE FIX: Parse backend datetime string to Date object (no timezone conversion)
+  parseBackendDate(dateStr: string): Date {
+    if (!dateStr) return new Date();
+    // Remove timezone info if present
+    const cleanDateStr = dateStr.split('+')[0].split('Z')[0];
+    const [datePart, timePart] = cleanDateStr.split('T');
+    const [year, month, day] = datePart.split('-');
+    const [hours, minutes, seconds] = timePart.split(':');
+    
+    // Create date using local time components
+    return new Date(
+      parseInt(year), 
+      parseInt(month) - 1, 
+      parseInt(day), 
+      parseInt(hours), 
+      parseInt(minutes), 
+      parseInt(seconds || '0')
+    );
+  }
+  
   handleDateSelect(selectInfo: any): void {
     if (!this.selectedResourceId) {
       this.toastService.error('Please select a resource first');
@@ -219,23 +268,34 @@ export class AvailabilityCalendarComponent implements OnInit, OnDestroy, AfterVi
       return;
     }
     
+    // Check if slot is longer than 4 hours
+    const durationHours = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
+    if (durationHours > 4) {
+      this.toastService.error('Maximum reservation duration is 4 hours');
+      return;
+    }
+    
+    // SIMPLE FIX: Format dates without timezone conversion
+    const startLocal = this.formatLocalDateForAPI(start);
+    const endLocal = this.formatLocalDateForAPI(end);
+    
     // Check availability
     this.availabilityService.checkAvailability(
       this.selectedResourceType,
       this.selectedResourceId,
-      start.toISOString(),
-      end.toISOString()
+      startLocal,
+      endLocal
     ).subscribe({
       next: (isAvailable) => {
         if (isAvailable) {
           this.selectedSlot = {
-            start: start.toISOString(),
-            end: end.toISOString(),
+            start: startLocal,
+            end: endLocal,
             resourceId: this.selectedResourceId!,
             resourceName: this.selectedResourceName || 'Selected Resource'
           };
-          this.reservationForm.startDatetime = this.formatDateTimeForInput(start);
-          this.reservationForm.endDatetime = this.formatDateTimeForInput(end);
+          this.reservationForm.startDatetime = this.formatForInput(start);
+          this.reservationForm.endDatetime = this.formatForInput(end);
           this.showReservationModal = true;
         } else {
           this.toastService.error('This time slot is already booked');
@@ -265,19 +325,18 @@ export class AvailabilityCalendarComponent implements OnInit, OnDestroy, AfterVi
     this.loadCalendarEvents();
   }
   
-  formatDateTimeForInput(date: Date): string {
-    return date.toISOString().slice(0, 16);
-  }
-  
   confirmReservation(): void {
     if (!this.selectedSlot) return;
     
+    // SIMPLE FIX: Use the stored local datetime strings directly
     const request: ReservationRequest = {
       resourceType: this.selectedResourceType,
       resourceId: this.selectedSlot.resourceId,
-      startDatetime: new Date(this.reservationForm.startDatetime).toISOString(),
-      endDatetime: new Date(this.reservationForm.endDatetime).toISOString()
+      startDatetime: this.selectedSlot.start,
+      endDatetime: this.selectedSlot.end
     };
+    
+    this.isLoading = true;
     
     this.reservationService.create(request).subscribe({
       next: (response) => {
@@ -285,9 +344,11 @@ export class AvailabilityCalendarComponent implements OnInit, OnDestroy, AfterVi
         this.showReservationModal = false;
         this.selectedSlot = null;
         this.loadCalendarEvents(); // Refresh calendar
+        this.isLoading = false;
       },
       error: (err) => {
         this.toastService.error(err.error?.message || 'Failed to create reservation');
+        this.isLoading = false;
       }
     });
   }

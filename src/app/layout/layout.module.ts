@@ -18,6 +18,7 @@ import { MyReservationsComponent } from '../features/resource/user/my-reservatio
 import { SmartSuggestionComponent } from '../features/reservation/smart-suggestion/smart-suggestion.component';
 import { AvailabilityCalendarComponent } from '../features/resource/availability-calendar/availability-calendar.component';
 import { FullCalendarModule } from '@fullcalendar/angular'; // ← IMPORT THIS
+import { ConflictResolverComponent } from '../features/reservation/conflict-resolver/conflict-resolver.component';
 
 const routes: Routes = [
   {
@@ -85,7 +86,8 @@ UserCollaborativeSpaceComponent,
 UserEquipmentComponent,
 MyReservationsComponent,
 SmartSuggestionComponent,
-AvailabilityCalendarComponent ],
+AvailabilityCalendarComponent,
+ConflictResolverComponent ],
   imports: [
     CommonModule,
     FormsModule,

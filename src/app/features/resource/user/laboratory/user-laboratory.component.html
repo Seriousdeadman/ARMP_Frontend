@@ -89,3 +89,12 @@
     </div>
   </div>
 </div>
+<!-- Add at the bottom of each HTML file, before the closing </div> tag -->
+<app-conflict-resolver
+  *ngIf="showConflictResolver"
+  [originalRequest]="pendingRequest"
+  [alternatives]="pendingAlternatives"
+  (resolved)="onConflictResolved($event)"
+  (cancelled)="onConflictCancelled()"
+  (tryDifferentTime)="onTryDifferentTime()">
+</app-conflict-resolver>

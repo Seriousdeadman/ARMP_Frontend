@@ -139,4 +139,14 @@
       </div>
     </div>
   </div>
+
+  <!-- Conflict Resolver Component -->
+  <app-conflict-resolver
+    *ngIf="showConflictResolver"
+    [originalRequest]="pendingRequest"
+    [alternatives]="pendingAlternatives"
+    (resolved)="onConflictResolved($event)"
+    (cancelled)="onConflictCancelled()"
+    (tryDifferentTime)="onTryDifferentTime()">
+  </app-conflict-resolver>
 </div>

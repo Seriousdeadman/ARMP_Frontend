@@ -2,8 +2,8 @@ import { Component, OnInit } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../../../environments/environment.development';
 import { AuthService } from '../../../../services/auth.service';
-import { ReservationService } from '../../../../services/reservation.service';
-import { Classroom, ClassroomType, ResourceStatus, ResourceType } from '../../../../models/resource.models';
+import { ReservationService, ConflictAlternative, SmartBookingResponse } from '../../../../services/reservation.service';
+import { Classroom, ClassroomType, ResourceStatus, ResourceType, ReservationRequest } from '../../../../models/resource.models';
 
 @Component({
   selector: 'app-user-classroom',
@@ -33,6 +33,11 @@ export class UserClassroomComponent implements OnInit {
   reserveSuccess = '';
   isSubmitting = false;
 
+  // Conflict resolver properties
+  showConflictResolver = false;
+  pendingRequest: ReservationRequest | null = null;
+  pendingAlternatives: ConflictAlternative[] = [];
+
   constructor(
     private http: HttpClient,
     private authService: AuthService,
@@ -53,7 +58,11 @@ export class UserClassroomComponent implements OnInit {
 
   load(): void {
     this.http.get<Classroom[]>(`${environment.apiUrl}/api/classrooms`).subscribe({
-      next: (data) => { this.classrooms = data; this.applyFilters(); this.isLoading = false; },
+      next: (data) => { 
+        this.classrooms = data; 
+        this.applyFilters(); 
+        this.isLoading = false; 
+      },
       error: () => this.isLoading = false
     });
   }
@@ -105,8 +114,15 @@ export class UserClassroomComponent implements OnInit {
     this.showDetailModal = false;
     this.reserveError = '';
     this.reserveSuccess = '';
-    this.startDatetime = '';
-    this.endDatetime = '';
+    // Set default times (next hour)
+    const now = new Date();
+    now.setHours(now.getHours() + 1);
+    now.setMinutes(0, 0, 0);
+    this.startDatetime = now.toISOString().slice(0, 16);
+    
+    const end = new Date(now);
+    end.setHours(end.getHours() + 1);
+    this.endDatetime = end.toISOString().slice(0, 16);
   }
 
   closeModals(): void {
@@ -128,7 +144,8 @@ export class UserClassroomComponent implements OnInit {
       return;
     }
 
-    if (new Date(this.startDatetime) < new Date()) {
+    const startDate = new Date(this.startDatetime);
+    if (startDate < new Date()) {
       this.reserveError = 'Cannot reserve in the past.';
       return;
     }
@@ -136,21 +153,60 @@ export class UserClassroomComponent implements OnInit {
     this.isSubmitting = true;
     this.reserveError = '';
 
-    this.reservationService.create({
+    const request: ReservationRequest = {
       resourceType: ResourceType.CLASSROOM,
       resourceId: this.selectedRoom!.id,
       startDatetime: this.startDatetime + ':00',
       endDatetime: this.endDatetime + ':00'
-    }).subscribe({
-      next: (res) => {
+    };
+
+    this.reservationService.smartBook(request).subscribe({
+      next: (response: SmartBookingResponse) => {
         this.isSubmitting = false;
-        this.reserveSuccess = `Successfully reserved ${this.selectedRoom!.name}!`;
-        setTimeout(() => this.closeModals(), 2500);
+        
+        if (response.conflict === false && response.reservation) {
+          this.reserveSuccess = `Successfully reserved ${this.selectedRoom!.name}!`;
+          setTimeout(() => this.closeModals(), 2500);
+        } else if (response.conflict === true && response.alternatives) {
+          this.pendingRequest = request;
+          this.pendingAlternatives = response.alternatives;
+          this.showConflictResolver = true;
+          this.closeModals();
+        }
       },
       error: (err) => {
         this.isSubmitting = false;
-        this.reserveError = err.error?.error || 'Reservation failed. Please try again.';
+        this.reserveError = err.error?.message || 'Reservation failed. Please try again.';
       }
     });
+  }
+
+  onConflictResolved(reservation: any): void {
+    this.showConflictResolver = false;
+    this.pendingRequest = null;
+    this.pendingAlternatives = [];
+    this.reserveSuccess = `Successfully booked alternative!`;
+    setTimeout(() => {
+      this.reserveSuccess = '';
+      this.load();
+    }, 2500);
+  }
+
+  onConflictCancelled(): void {
+    this.showConflictResolver = false;
+    this.pendingRequest = null;
+    this.pendingAlternatives = [];
+    if (this.selectedRoom) {
+      this.openReserve(this.selectedRoom);
+    }
+  }
+
+  onTryDifferentTime(): void {
+    this.showConflictResolver = false;
+    this.pendingRequest = null;
+    this.pendingAlternatives = [];
+    if (this.selectedRoom) {
+      this.openReserve(this.selectedRoom);
+    }
   }
 }
