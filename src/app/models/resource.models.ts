@@ -108,3 +108,24 @@ export interface ReservationResponse {
   status: ReservationStatus;
   createdAt: string;
 }
+export interface ResourceSuggestionRequest {
+  resourceType: ResourceType;
+  minCapacity?: number;
+  maxCapacity?: number;
+  building?: string;
+  startDatetime?: string;
+  endDatetime?: string;
+  limit?: number;
+}
+
+export interface ResourceSuggestionResponse {
+  id: number;
+  name: string;
+  resourceType: ResourceType;
+  capacity?: number;
+  building?: string;
+  roomNumber?: string;
+  score: number;
+  reason: string;
+  available: boolean;
+}

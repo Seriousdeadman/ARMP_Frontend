@@ -1,0 +1,92 @@
+<!-- availability-calendar.component.html -->
+<div class="availability-calendar">
+  <div class="calendar-header">
+    <h1>Resource Availability Calendar</h1>
+    <p>View and book available resources with an interactive calendar</p>
+  </div>
+
+  <div class="resource-selector">
+    <div class="selector-group">
+      <label>Resource Type</label>
+      <select [(ngModel)]="selectedResourceType" (change)="onResourceSelect()">
+        <option *ngFor="let type of resourceTypes" [value]="type">
+          {{ getResourceTypeLabel(type) }}
+        </option>
+      </select>
+    </div>
+
+    <div class="selector-group">
+      <label>Select Resource</label>
+      <select [(ngModel)]="selectedResourceId" (change)="onResourceSelect()">
+        <option [ngValue]="null">Choose a resource...</option>
+        <option *ngFor="let resource of getCurrentResources()" [ngValue]="resource.id">
+          {{ resource.name }}
+          <span *ngIf="resource.capacity"> (Capacity: {{ resource.capacity }})</span>
+          <span *ngIf="resource.building"> - {{ resource.building }}</span>
+        </option>
+      </select>
+    </div>
+  </div>
+
+  <div class="calendar-container" *ngIf="selectedResourceId; else noResourceSelected">
+    <div class="calendar-legend">
+      <div class="legend-item">
+        <span class="legend-color available"></span>
+        <span>Available</span>
+      </div>
+      <div class="legend-item">
+        <span class="legend-color booked"></span>
+        <span>Booked</span>
+      </div>
+      <div class="legend-instruction">
+        <i class="instruction-icon">🖱️</i>
+        <span>Click or drag on any time slot to book</span>
+      </div>
+    </div>
+
+    <full-calendar
+      #calendar
+      [options]="calendarOptions"
+      [events]="calendarEvents">
+    </full-calendar>
+
+    <div class="loading-overlay" *ngIf="isLoading">
+      <div class="spinner"></div>
+      <p>Loading availability...</p>
+    </div>
+  </div>
+
+  <ng-template #noResourceSelected>
+    <div class="empty-state">
+      <div class="empty-icon">📅</div>
+      <h3>No Resource Selected</h3>
+      <p>Please select a resource type and a specific resource to view availability</p>
+    </div>
+  </ng-template>
+
+  <!-- Reservation Modal -->
+  <div class="modal-overlay" *ngIf="showReservationModal" (click)="closeModal()">
+    <div class="modal-box" (click)="$event.stopPropagation()">
+      <h2 class="modal-title">Confirm Reservation</h2>
+      <p class="modal-subtitle">{{ selectedSlot?.resourceName }}</p>
+      
+      <div class="modal-divider"></div>
+      
+      <div class="form-row">
+        <div class="form-group">
+          <label>Start Time</label>
+          <input type="datetime-local" [(ngModel)]="reservationForm.startDatetime" />
+        </div>
+        <div class="form-group">
+          <label>End Time</label>
+          <input type="datetime-local" [(ngModel)]="reservationForm.endDatetime" />
+        </div>
+      </div>
+      
+      <div class="modal-actions">
+        <button class="btn-modal-cancel" (click)="closeModal()">Cancel</button>
+        <button class="btn-modal-confirm" (click)="confirmReservation()">Confirm Reservation</button>
+      </div>
+    </div>
+  </div>
+</div>

@@ -39,6 +39,8 @@ export class ShellComponent implements OnInit, OnDestroy {
     { label: 'Collab Spaces', route: '/app/browse/collaborative-spaces', group: 'Browse' },
     { label: 'Equipment', route: '/app/browse/equipment', group: 'Browse' },
     { label: 'My Reservations', route: '/app/my-reservations', group: 'Browse' },
+    { label: 'Availability', route: '/app/availability', group: 'Browse' },
+    { label: 'Smart Finder', route: '/app/smart-suggest', group: 'Browse' }
   ];
 
   // ✅ Account group items

@@ -1,0 +1,415 @@
+// frontend/src/app/features/reservation/smart-suggestion/smart-suggestion.component.scss
+.smart-suggestion-container {
+  padding: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.hero-section {
+  text-align: center;
+  margin-bottom: 2rem;
+
+  h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    background: linear-gradient(135deg, #00d4aa, #0099ff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  p {
+    color: #666;
+  }
+}
+
+.suggestion-form-card {
+  background: white;
+  border-radius: 16px;
+  padding: 2rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+
+  h2 {
+    font-size: 1.3rem;
+    margin-bottom: 1.5rem;
+  }
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+
+  label {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: #444;
+  }
+
+  input, select {
+    padding: 0.6rem 0.8rem;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    outline: none;
+
+    &:focus {
+      border-color: #00d4aa;
+    }
+  }
+}
+
+.form-actions {
+  display: flex;
+  justify-content: center;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #00d4aa, #0099ff);
+  color: white;
+  border: none;
+  padding: 0.8rem 2rem;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s;
+
+  &:hover:not(:disabled) {
+    transform: translateY(-2px);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+.btn-secondary {
+  background: #f1f5f9;
+  color: #333;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+
+  &:hover {
+    background: #e2e8f0;
+  }
+}
+
+.results-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+
+  h2 {
+    font-size: 1.3rem;
+  }
+}
+
+.suggestions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1.5rem;
+}
+
+.suggestion-card {
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  transition: transform 0.2s, box-shadow 0.2s;
+
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  }
+
+  &.unavailable {
+    opacity: 0.6;
+  }
+}
+
+.card-score {
+  padding: 1rem;
+  text-align: center;
+  background: #f8fafc;
+
+  .score-value {
+    font-size: 2rem;
+    font-weight: 700;
+    display: block;
+  }
+
+  .score-label {
+    font-size: 0.75rem;
+    color: #666;
+  }
+
+  &.score-high .score-value { color: #10b981; }
+  &.score-medium .score-value { color: #f59e0b; }
+  &.score-low .score-value { color: #ef4444; }
+}
+
+.card-content {
+  padding: 1.25rem;
+
+  h3 {
+    font-size: 1.1rem;
+    margin-bottom: 0.75rem;
+  }
+}
+
+.details {
+  margin-bottom: 1rem;
+
+  .detail {
+    font-size: 0.85rem;
+    margin-bottom: 0.5rem;
+
+    .detail-label {
+      font-weight: 600;
+      color: #666;
+      margin-right: 0.5rem;
+    }
+  }
+
+  .reason {
+    color: #888;
+    font-style: italic;
+  }
+}
+
+.btn-reserve {
+  width: 100%;
+  padding: 0.6rem;
+  background: #00d4aa;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+
+  &:hover:not(:disabled) {
+    background: #00bf9a;
+  }
+
+  &:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+  }
+}
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-box {
+  background: white;
+  border-radius: 16px;
+  padding: 1.5rem;
+  width: 100%;
+  max-width: 450px;
+
+  .modal-title {
+    font-size: 1.2rem;
+    margin-bottom: 0.25rem;
+  }
+
+  .modal-subtitle {
+    color: #666;
+    margin-bottom: 1rem;
+  }
+
+  .modal-divider {
+    height: 1px;
+    background: #eee;
+    margin: 1rem 0;
+  }
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+
+  button {
+    flex: 1;
+    padding: 0.6rem;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+}
+
+.btn-modal-cancel {
+  background: #f1f5f9;
+  border: none;
+  color: #333;
+
+  &:hover {
+    background: #e2e8f0;
+  }
+}
+
+.btn-modal-confirm {
+  background: #00d4aa;
+  border: none;
+  color: white;
+  font-weight: 600;
+
+  &:hover {
+    background: #00bf9a;
+  }
+}
+
+.loading-state {
+  text-align: center;
+  padding: 3rem;
+
+  .spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid #00d4aa;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 1rem;
+  }
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.no-results {
+  text-align: center;
+  padding: 3rem;
+  background: white;
+  border-radius: 12px;
+  
+  p {
+    color: #666;
+    margin-bottom: 1rem;
+  }
+}
+
+// Ensure the card displays properly
+.suggestion-card {
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  transition: transform 0.2s, box-shadow 0.2s;
+
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  }
+
+  &.unavailable {
+    opacity: 0.6;
+  }
+}
+
+.card-score {
+  padding: 1rem;
+  text-align: center;
+  background: #f8fafc;
+
+  .score-value {
+    font-size: 2rem;
+    font-weight: 700;
+    display: block;
+  }
+
+  .score-label {
+    font-size: 0.75rem;
+    color: #666;
+  }
+
+  &.score-high .score-value { color: #10b981; }
+  &.score-medium .score-value { color: #f59e0b; }
+  &.score-low .score-value { color: #ef4444; }
+}
+
+.card-content {
+  padding: 1.25rem;
+
+  h3 {
+    font-size: 1.1rem;
+    margin-bottom: 0.75rem;
+    font-weight: 600;
+  }
+}
+
+.details {
+  margin-bottom: 1rem;
+
+  .detail {
+    font-size: 0.85rem;
+    margin-bottom: 0.5rem;
+    line-height: 1.4;
+
+    .detail-label {
+      font-weight: 600;
+      color: #666;
+      margin-right: 0.5rem;
+    }
+  }
+
+  .reason {
+    color: #00d4aa;
+    background: rgba(0, 212, 170, 0.05);
+    padding: 0.5rem;
+    border-radius: 6px;
+    margin-top: 0.5rem;
+  }
+}
+
+.btn-reserve {
+  width: 100%;
+  padding: 0.6rem;
+  background: #00d4aa;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+
+  &:hover:not(:disabled) {
+    background: #00bf9a;
+  }
+
+  &:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+  }
+}

@@ -21,7 +21,8 @@ import { FormsModule } from '@angular/forms';
     AppRoutingModule,
     LayoutModule,
     ErrorsModule,
-    FormsModule
+    FormsModule,
+    
   ],
   providers: [
     provideHttpClient(withFetch(), withInterceptors([authInterceptor]))

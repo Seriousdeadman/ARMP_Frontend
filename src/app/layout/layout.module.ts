@@ -14,7 +14,10 @@ import { UserClassroomComponent } from '../features/resource/user/classroom/user
 import { UserCollaborativeSpaceComponent } from '../features/resource/user/collaborative-space/user-collaborative-space.component';
 import { UserEquipmentComponent } from '../features/resource/user/equipement/user-equipment.component';
 import { UserLaboratoryComponent } from '../features/resource/user/laboratory/user-laboratory.component';
-import { MyReservationsComponent } from '../features/resource/user/my-reservations/my-reservations.component.ts';
+import { MyReservationsComponent } from '../features/resource/user/my-reservations/my-reservations.component';
+import { SmartSuggestionComponent } from '../features/reservation/smart-suggestion/smart-suggestion.component';
+import { AvailabilityCalendarComponent } from '../features/resource/availability-calendar/availability-calendar.component';
+import { FullCalendarModule } from '@fullcalendar/angular'; // ← IMPORT THIS
 
 const routes: Routes = [
   {
@@ -62,6 +65,8 @@ const routes: Routes = [
       { path: 'laboratories', component: LaboratoryComponent },
       { path: 'collaborative-spaces', component: CollaborativeSpaceComponent },
       { path: 'my-reservations', component: MyReservationsComponent },
+      { path: 'smart-suggest', component: SmartSuggestionComponent },
+      { path: 'availability', component: AvailabilityCalendarComponent},
       { path: 'equipment', component: EquipmentComponent }
     ]
   }
@@ -78,13 +83,15 @@ const routes: Routes = [
 UserLaboratoryComponent,
 UserCollaborativeSpaceComponent,
 UserEquipmentComponent,
-MyReservationsComponent
-  ],
+MyReservationsComponent,
+SmartSuggestionComponent,
+AvailabilityCalendarComponent ],
   imports: [
     CommonModule,
     FormsModule,
     RouterModule.forChild(routes),
-    SharedModule
+    SharedModule,
+    FullCalendarModule
   ]
 })
 export class LayoutModule {}

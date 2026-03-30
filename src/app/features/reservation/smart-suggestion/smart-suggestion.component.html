@@ -1,0 +1,142 @@
+<!-- smart-suggestion.component.html -->
+<div class="smart-suggestion-container">
+  <div class="hero-section">
+    <h1>Smart Resource Finder</h1>
+    <p>Let AI find the perfect resource for your needs</p>
+  </div>
+
+  <!-- Suggestion Form -->
+  <div class="suggestion-form-card" *ngIf="showSuggestionForm">
+    <h2>Tell us what you need</h2>
+    
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Resource Type</label>
+        <select [(ngModel)]="form.resourceType">
+          <option *ngFor="let type of resourceTypes" [value]="type">{{ type }}</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Start Time</label>
+        <input type="datetime-local" [(ngModel)]="form.startDatetime" />
+      </div>
+
+      <div class="form-group">
+        <label>End Time</label>
+        <input type="datetime-local" [(ngModel)]="form.endDatetime" />
+      </div>
+
+      <div class="form-group">
+        <label>Minimum Capacity</label>
+        <input type="number" [(ngModel)]="form.minCapacity" placeholder="Optional" />
+      </div>
+
+      <div class="form-group">
+        <label>Maximum Capacity</label>
+        <input type="number" [(ngModel)]="form.maxCapacity" placeholder="Optional" />
+      </div>
+
+      <div class="form-group">
+        <label>Preferred Building</label>
+        <input type="text" [(ngModel)]="form.building" placeholder="Optional" />
+      </div>
+
+      <div class="form-group">
+        <label>Number of Suggestions</label>
+        <select [(ngModel)]="form.limit">
+          <option [value]="3">3</option>
+          <option [value]="5">5</option>
+          <option [value]="10">10</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <button class="btn-primary" (click)="getSuggestions()" [disabled]="isLoading">
+        {{ isLoading ? 'Finding...' : 'Find Resources' }}
+      </button>
+    </div>
+  </div>
+
+  <!-- Suggestions Results -->
+  <div class="results-section" *ngIf="!showSuggestionForm && !isLoading">
+    <div class="results-header">
+      <h2>Top Suggestions</h2>
+      <button class="btn-secondary" (click)="backToForm()">New Search</button>
+    </div>
+
+    <div class="suggestions-grid" *ngIf="suggestions.length > 0; else noResults">
+      <div class="suggestion-card" *ngFor="let item of suggestions" 
+           [class.unavailable]="!item.available">
+        <div class="card-score" [class]="getScoreClass(item.score)">
+          <span class="score-value">{{ Math.round(item.score) }}%</span>
+          <span class="score-label">{{ getScoreLabel(item.score) }}</span>
+        </div>
+        
+        <div class="card-content">
+          <h3>{{ item.name }}</h3>
+          
+          <!-- Display details based on resource type -->
+          <div class="details">
+            <div *ngIf="item.capacity" class="detail">
+              <span class="detail-label">📊 Capacity:</span>
+              <span>{{ item.capacity }} people</span>
+            </div>
+            <div *ngIf="item.building" class="detail">
+              <span class="detail-label">📍 Location:</span>
+              <span>{{ item.building }}{{ item.roomNumber ? ', Room ' + item.roomNumber : '' }}</span>
+            </div>
+            <div class="detail reason">
+              <span class="detail-label">💡 Why:</span>
+              <span>{{ item.reason || 'Good match for your needs' }}</span>
+            </div>
+          </div>
+          
+          <button class="btn-reserve" (click)="openReservationModal(item)" 
+                  [disabled]="!item.available">
+            {{ item.available ? '✓ Reserve Now' : '✗ Not Available' }}
+          </button>
+        </div>
+      </div>
+    </div>
+    
+    <ng-template #noResults>
+      <div class="no-results">
+        <p>No resources found matching your criteria. Try adjusting your filters.</p>
+        <button class="btn-secondary" (click)="backToForm()">Back to Search</button>
+      </div>
+    </ng-template>
+  </div>
+
+  <div class="loading-state" *ngIf="isLoading">
+    <div class="spinner"></div>
+    <p>AI is analyzing available resources...</p>
+  </div>
+
+  <!-- Reservation Modal -->
+  <div class="modal-overlay" *ngIf="showReservationModal" (click)="showReservationModal = false">
+    <div class="modal-box" (click)="$event.stopPropagation()">
+      <h2 class="modal-title">Confirm Reservation</h2>
+      <p class="modal-subtitle">{{ selectedResource?.name }}</p>
+      
+      <div class="modal-divider"></div>
+      
+      <div class="form-row">
+        <div class="form-group">
+          <label>Start Time</label>
+          <input type="datetime-local" [(ngModel)]="reservationForm.startDatetime" />
+        </div>
+        <div class="form-group">
+          <label>End Time</label>
+          <input type="datetime-local" [(ngModel)]="reservationForm.endDatetime" />
+        </div>
+      </div>
+      
+      <div class="modal-actions">
+        <button class="btn-modal-cancel" (click)="showReservationModal = false">Cancel</button>
+        <button class="btn-modal-confirm" (click)="confirmReservation()">Confirm Reservation</button>
+      </div>
+    </div>
+  </div>
+</div>

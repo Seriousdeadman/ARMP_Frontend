@@ -1,0 +1,311 @@
+// availability-calendar.component.scss
+.availability-calendar {
+  padding: 2rem;
+  min-height: 100vh;
+  background: #f8fafc;
+}
+
+.calendar-header {
+  margin-bottom: 2rem;
+  
+  h1 {
+    font-size: 1.8rem;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+    color: #1e293b;
+  }
+  
+  p {
+    color: #64748b;
+  }
+}
+
+.resource-selector {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  display: flex;
+  gap: 2rem;
+  flex-wrap: wrap;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  
+  .selector-group {
+    flex: 1;
+    min-width: 200px;
+    
+    label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #475569;
+      margin-bottom: 0.5rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    
+    select {
+      width: 100%;
+      padding: 0.6rem 0.8rem;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      background: white;
+      cursor: pointer;
+      transition: border-color 0.2s;
+      
+      &:focus {
+        outline: none;
+        border-color: #00d4aa;
+      }
+    }
+  }
+}
+
+.calendar-container {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  position: relative;
+  
+  :host ::ng-deep {
+    .fc {
+      .fc-toolbar-title {
+        font-size: 1.2rem;
+        font-weight: 600;
+      }
+      
+      .fc-button {
+        background: #f1f5f9;
+        border: none;
+        color: #475569;
+        padding: 0.4rem 0.8rem;
+        
+        &:hover {
+          background: #e2e8f0;
+        }
+        
+        &.fc-button-active {
+          background: #00d4aa;
+          color: white;
+        }
+      }
+      
+      .fc-timegrid-slot {
+        height: 3rem;
+      }
+      
+      .fc-event {
+        cursor: pointer;
+        border-radius: 6px;
+        font-size: 0.8rem;
+        transition: transform 0.1s;
+        
+        &:hover {
+          transform: scale(0.98);
+        }
+      }
+      
+      .fc-day-today {
+        background: rgba(0, 212, 170, 0.05);
+      }
+    }
+  }
+}
+
+.calendar-legend {
+  display: flex;
+  gap: 2rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #e2e8f0;
+  flex-wrap: wrap;
+  
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    
+    .legend-color {
+      width: 20px;
+      height: 20px;
+      border-radius: 4px;
+      
+      &.available {
+        background: #10b981;
+      }
+      
+      &.booked {
+        background: #ef4444;
+      }
+    }
+  }
+  
+  .legend-instruction {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #64748b;
+    font-size: 0.85rem;
+    
+    .instruction-icon {
+      font-size: 1rem;
+    }
+  }
+}
+
+.loading-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.9);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  z-index: 10;
+  
+  .spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid #e2e8f0;
+    border-top-color: #00d4aa;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 1rem;
+  }
+}
+
+.empty-state {
+  text-align: center;
+  padding: 4rem;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  
+  .empty-icon {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+  }
+  
+  h3 {
+    font-size: 1.2rem;
+    margin-bottom: 0.5rem;
+    color: #1e293b;
+  }
+  
+  p {
+    color: #64748b;
+  }
+}
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-box {
+  background: white;
+  border-radius: 16px;
+  padding: 1.5rem;
+  width: 100%;
+  max-width: 450px;
+  
+  .modal-title {
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+  }
+  
+  .modal-subtitle {
+    color: #64748b;
+    margin-bottom: 1rem;
+  }
+  
+  .modal-divider {
+    height: 1px;
+    background: #e2e8f0;
+    margin: 1rem 0;
+  }
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  
+  label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #475569;
+  }
+  
+  input {
+    padding: 0.6rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    
+    &:focus {
+      outline: none;
+      border-color: #00d4aa;
+    }
+  }
+}
+
+.modal-actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+  
+  button {
+    flex: 1;
+    padding: 0.6rem;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 500;
+  }
+}
+
+.btn-modal-cancel {
+  background: #f1f5f9;
+  border: none;
+  color: #475569;
+  
+  &:hover {
+    background: #e2e8f0;
+  }
+}
+
+.btn-modal-confirm {
+  background: #00d4aa;
+  border: none;
+  color: white;
+  
+  &:hover {
+    background: #00bf9a;
+  }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
