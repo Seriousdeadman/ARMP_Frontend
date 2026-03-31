@@ -104,15 +104,20 @@ export class MyReservationsComponent implements OnInit {
     this.confirmCancelId = null;
   }
 
+  // FIXED: Immediate removal after cancellation
   confirmCancel(): void {
     if (this.confirmCancelId === null) return;
+    
+    const cancelledReservationId = this.confirmCancelId;
     this.isCancelling = true;
+    
     this.reservationService.cancel(this.confirmCancelId).subscribe({
       next: (updated) => {
-        this.reservations = this.reservations.map(r =>
-          r.id === this.confirmCancelId ? updated : r
-        );
+        // FIX: Remove the cancelled reservation from the array immediately
+        this.reservations = this.reservations.filter(r => r.id !== cancelledReservationId);
+        // Re-apply filters to update the displayed list
         this.applyFilters();
+        // Close modal and reset state
         this.confirmCancelId = null;
         this.isCancelling = false;
       },
